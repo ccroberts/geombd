@@ -129,12 +129,13 @@ atom_par Q      4.00  0.150  33.5103  -0.00143  0.0  0.0  0  -1  -1  0	# Ring cl
 using namespace std;
 
 
-struct LJparam {
+struct pair_parameter {
   double A;
   double B;
+  int xB;
 };
 
-typedef vector<LJparam> Vec;
+typedef vector<pair_parameter> Vec;
 typedef vector<Vec> PairMap;
 
 
@@ -154,7 +155,7 @@ class AutoDockParameters {
     vector<double> epsij_hb;
     vector<int> hbond_type;
 
-    PairMap pair_map;
+    PairMap lj_map;
 
   public:
     AutoDockParameters(string filename) {
@@ -209,16 +210,42 @@ class AutoDockParameters {
         }
       }
 
-      pair_map = PairMap(types.size());
+      lj_map = PairMap(types.size());
+
       for(int i=0; i < types.size(); i++) {
         for(int j=0; j < i+1; j++) {
-          LJparam p = {0., 0.};
-          pair_map[i].push_back(p);
+          pair_parameter parm;
+
+          if(hbond_type[i] > 2 and (hbond_type[j] == 1 or hbond_type[j] == 2)) {
+            double rij = Rij_hb[i];
+            double eij = epsij_hb[i];
+            parm = {
+              /*C*/5. * eij * pow(rij, 12),
+              /*D*/6. * eij * pow(rij, 10),
+              /*xD*/ (int)10
+            };
+          }
+          if((hbond_type[i] == 1 || hbond_type[i] == 2) and hbond_type[j] > 2) {
+            double rij = Rij_hb[j];
+            double eij = epsij_hb[j];
+            parm = {
+              /*C*/5. * eij * pow(rij, 12),
+              /*D*/6. * eij * pow(rij, 10),
+              /*xD*/ (int)10
+            };
+          }
+          if(hbond_type[i] == 0 || hbond_type[j] == 0) {
+            double rij = 0.5 * (Rii[i] + Rii[j]);
+            double eij = sqrt(epsii[i] * epsii[j]);
+            parm = {
+              /*A*/eij * pow(rij, 12),
+              /*B*/2. * eij * pow(rij, 6),
+              /*xB*/ (int)6
+            };
+          }
+
+          lj_map[i].push_back(parm);
         }
-        for(int j=0; j < i+1; j++) {
-          cout << pair_map[i][j].A  << " ";
-        }
-        cout << endl;
       }
     }
 

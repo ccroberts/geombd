@@ -14,6 +14,7 @@
 #include <sys/time.h>
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
+#include <cilk/reducer_opadd.h>
 #include <mkl.h>
 #include <limits.h>
 
@@ -24,6 +25,7 @@ using namespace std;
  * Constants
  */
 #define kB 1.9858775e-3 // kcal/molK
+#define kC 332.0623183 // coulomb constant
 #define Na 6.0221415e23
 #define LperA3 1.0e-27
 #define nMperM 1.0e9

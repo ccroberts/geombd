@@ -194,11 +194,8 @@ int main(int argc, char **argv) {
           if(calculationType == CALCULATION_ES) {
             if(aQ[i] == 0.) continue;
             dr[0] = X - aX[i];
-            if(dr[0] > pad) continue;
             dr[1] = Y - aY[i];
-            if(dr[1] > pad) continue;
             dr[2] = Z - aZ[i];
-            if(dr[2] > pad) continue;
             double distSqr = dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2];
             if(distSqr > pad2) continue;
             if(distSqr < 2.25) {
