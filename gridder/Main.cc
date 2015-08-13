@@ -126,11 +126,17 @@ int main(int argc, char **argv) {
   vector<double> u_t(lig->types_set.size());
   // Z vector storage for E and D calcs
   double *data_e = (double*)calloc(Npoints[2], sizeof(double));
+  double *data_d = (double*)calloc(Npoints[2], sizeof(double));
   if(!data_e) { cout << "! Error: Could not allocate memory for grid calculation." << endl; return EXIT_FAILURE; }
+  if(!data_d) { cout << "! Error: Could not allocate memory for grid calculation." << endl; return EXIT_FAILURE; }
   ofstream bpm_e("e.bpm", ios::out | ios::binary);
+  ofstream bpm_d("d.bpm", ios::out | ios::binary);
   bpm_e.write((char*)&origin, sizeof(vertex));
   bpm_e.write((char*)&Npoints, sizeof(int)*3);
   bpm_e.write((char*)&grid_resolution, sizeof(double));
+  bpm_d.write((char*)&origin, sizeof(vertex));
+  bpm_d.write((char*)&Npoints, sizeof(int)*3);
+  bpm_d.write((char*)&grid_resolution, sizeof(double));
 
 
   // Dynamic storage for VDW/HB calcs
@@ -168,14 +174,15 @@ int main(int argc, char **argv) {
       cilk_for(int nz=0; nz < Npoints[2]; nz++) {
         double Z = (nz * grid_resolution) + origin.z;
 
-        vertex dr;
         data_e[nz] = 0;
+        data_d[nz] = 0;
         for(int at=0; at < type_t.size(); at++)
           data_t[at][nz] = 0;
 
         for(int i=0; i < rec->coordinates.size(); i++) {
           if(rec->charges[i] == 0.) continue;
           vertex Rrec = rec->coordinates[i];
+          vertex dr;
           dr.x = X - Rrec.x; 
           dr.y = Y - Rrec.y; 
           dr.z = Z - Rrec.z; 
@@ -184,11 +191,10 @@ int main(int argc, char **argv) {
           double dist = sqrt(dist_sqr);
           // Electrostatic
           double du_e = kC * rec->charges[i] * exp(-dist * kappa) / (diel_rec * dist);
-          if(du_e > 1.5e3) du_e = 1.5e3;
-          if(du_e < -1.5e3) du_e = -1.5e3;
           data_e[nz] += du_e;
           // Desolvation
-          // ...
+          double du_d = 0.01097 * adp->vol[rec->types[i]] * exp(-dist_sqr / 24.5); /*Note: 24.5 = 2 * GaussianDistantConstant^2 = 2. * 3.5 * 3.5*/
+          data_d[nz] += du_d;
           // Iterate of each ligand atom type and calc VDW/HB
           int rec_type = rec->types[i];
           double dist_4 = dist_sqr * dist_sqr;
@@ -201,14 +207,16 @@ int main(int argc, char **argv) {
             else parm = adp->lj_map[rec_type][lig_type];
             double denominator_b = (parm.xB == 10) ? (dist_4 * dist_6) : (dist_6);
             double du_t = (parm.A / dist_12) - (parm.B / denominator_b);
-            if(du_t > 1.5e3) du_t = 1.5e3;
-            if(du_t < -1.5e3) du_t = -1.5e3;
+            if(parm.xB == 10) {
+              //multiply du_t by cos^m(theta)
+            }
             data_t[at][nz] += du_t;
           }
         }
       }
 
       bpm_e.write((char*)data_e, sizeof(double) * Npoints[2]);
+      bpm_d.write((char*)data_d, sizeof(double) * Npoints[2]);
       for(int at=0; at < type_t.size(); at++) {
         bpm_t[at]->write((char*)data_t[at], sizeof(double) * Npoints[2]);
       }
@@ -220,6 +228,7 @@ int main(int argc, char **argv) {
   }
 
   bpm_e.close();
+  bpm_d.close();
   for(int at=0; at < type_t.size(); at++)
     bpm_t[at]->close();
 

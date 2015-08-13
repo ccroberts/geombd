@@ -3,12 +3,12 @@
 
 #include "Main.h"
 #include "Strings.h"
-#include "PotentialMap.h"
+#include "BinaryPotentialMap.h"
 
  
-class ESPotentialMap : public PotentialMap {
+class ESPotentialMap : public BinaryPotentialMap {
   public:
-    ESPotentialMap(string dx_filename) : PotentialMap(dx_filename) {
+    ESPotentialMap(string bpm_filename) : BinaryPotentialMap(bpm_filename) {
     }
 
     bool potential(vertex *R, double q, double *e) {
@@ -39,7 +39,7 @@ class ESPotentialMap : public PotentialMap {
       dU2[1] = (E - data[grid[0]][grid[1]+1][grid[2]]) / (delta);
       dU2[2] = (E - data[grid[0]][grid[1]][grid[2]+1]) / (delta);
 
-      *e = E * q;
+      if(e) *e = E * q;
 
       double qDiv2 = q / 2;//wrap it all in
       F->x += qDiv2 * (dU1[0] + dU2[0]);

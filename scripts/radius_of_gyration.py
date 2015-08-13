@@ -30,5 +30,6 @@ for c in coords:
 
 rmsd /= N
 rmsd = math.sqrt(rmsd)
-print(rmsd)
+print('ROJ:', rmsd)
+print('Center:', center)
 

@@ -12,7 +12,7 @@ class Bead {
     double q;
     double r;
     double m;
-    char type;
+    string type;
 
   public:
     Bead() {
@@ -25,7 +25,6 @@ class Bead {
       q = 0.;
       r = 0.;
       m = 0.;
-      type = 0;
     }
 
 

@@ -3,7 +3,7 @@
 
 #include "Main.h"
 #include "Body.h"
-#include "PotentialMap.h"
+#include "BinaryPotentialMap.h"
 #include "TypePotentialMap.h"
 #include "ESPotentialMap.h"
 
@@ -57,6 +57,7 @@ class Model {
     vector< TypePotentialMap* > typemaps;
     vector< Body* > conformations;
     vector< Body* > ligands;
+    //vector< BindingSite > bindingSites;
     BindingSite bindingSite;
 
   public:

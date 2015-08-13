@@ -25,30 +25,35 @@ bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
 
 
 void usage() {
-  printf("Usage: ADD -f FOO.maps.fld -l BAR.dlg -o Trajectory.pdb -b B_SPHERE_RADIUS -s BINDINGSITERadius,X,Y,Z [-R REPLICATES(=10000) -n NTHREADS(=max) -T TEMP_KELVIN(=298,room temp) -v VISCOSITY_cP(=1.,Water) -t MAXIMUM_TIME_PS(=100000000ps)]\n");
+  printf("Usage: add -f FOO.maps.fld -l BAR.dlg -o Trajectory.pdb -b B_SPHERE_RADIUS -s BINDINGSITERadius,X,Y,Z [-R REPLICATES(=10000) -n NTHREADS(=max) -T TEMP_KELVIN(=298,room temp) -v VISCOSITY_cP(=1.,Water) -t MAXIMUM_TIME_PS(=100000000ps)]\n");
 }
 
 
 int main(int argc, char **argv) {
-  string fldfn, dlgfn, trjfn, bradius, bsite, stoken, breceptorRoG;
+  string fldfn, dlgfn, trjfn, bradius, bpos, bsite, stoken, breceptorRoG;
+  bool radial = false;
+  bool positional = false;
+
+  cout << "* Nueva 1" << endl;
 
   srand(time(NULL));
 
   if(!getInputWithFlag(argc, argv, 'f', &fldfn)) { usage(); return -1; }
   if(!getInputWithFlag(argc, argv, 'l', &dlgfn)) { usage(); return -1; }
   if(!getInputWithFlag(argc, argv, 'o', &trjfn)) { usage(); return -1; }
-  if(!getInputWithFlag(argc, argv, 'b', &bradius)) { usage(); return -1; }
   if(!getInputWithFlag(argc, argv, 's', &bsite)) { usage(); return -1; }
   if(!getInputWithFlag(argc, argv, 'g', &breceptorRoG)) { usage(); return -1; }
   if(getInputWithFlag(argc, argv, 'n', &stoken)) {
     __cilkrts_set_param("nworkers", stoken.c_str());
     cout << "* Attempting to set number of threads to " << stoken << endl;
   }
+  if(getInputWithFlag(argc, argv, 'b', &bradius)) radial = true;
+  if(getInputWithFlag(argc, argv, 'p', &bpos)) positional = true;
+  if(radial == false and positional == false) {  cout <<"ferk" << endl;usage(); return -1; }
 
   // Create model
   Model *model = new Model(fldfn, dlgfn, trjfn, stringToDouble(breceptorRoG));
-  model->r_ligand = stringToDouble(bradius);
-  model->ligandPosition = LIGAND_POSITION_RADIAL;
+
   parseNextValue(&bsite, &stoken);
   model->bindingSite.r2 = pow(stringToDouble(stoken), 2);
   parseNextValue(&bsite, &stoken);
@@ -58,6 +63,38 @@ int main(int argc, char **argv) {
   parseNextValue(&bsite, &stoken);
   model->bindingSite.z = stringToDouble(stoken);
   cout << "* Binding site set to: (" << model->bindingSite.x << ", " << model->bindingSite.y << ", " << model->bindingSite.z << ") Radius: " << sqrt(model->bindingSite.r2) << endl;
+
+  if(radial) {
+    model->ligandPosition = LIGAND_POSITION_RADIAL;
+    model->r_ligand = stringToDouble(bradius);
+    model->r2_escape = pow(model->r_ligand * 5., 2.);
+    cout << "> Radial mode set. Bradius: " << model->r_ligand <<"A -- Qradius: " << sqrt(model->r2_escape) << "A" << endl;
+  }
+
+  if(positional) {
+    model->ligandPosition = LIGAND_POSITION_ABSOLUTE;
+    parseNextValue(&bpos, &stoken);
+    model->R_ligand.x = stringToDouble(stoken);
+    parseNextValue(&bpos, &stoken);
+    model->R_ligand.y = stringToDouble(stoken);
+    parseNextValue(&bpos, &stoken);
+    model->R_ligand.z = stringToDouble(stoken);
+    printf("> Ligand starting position set to (%f, %f, %f)\n", model->R_ligand.x, model->R_ligand.y, model->R_ligand.z); 
+
+    if(radial) {
+      model->r_ligand = stringToDouble(bradius);
+      model->r2_escape = pow(model->r_ligand * 5., 2.);
+      cout << "> Bradius: " << model->r_ligand <<"A -- Qradius: " << sqrt(model->r2_escape) << "A" << endl;
+    } else {
+      vertex dr;
+      dr.x = model->bindingSite.x - model->R_ligand.x;
+      dr.y = model->bindingSite.y - model->R_ligand.y;
+      dr.z = model->bindingSite.z - model->R_ligand.z;
+      model->r_ligand = sqrt(dr.x*dr.x + dr.y*dr.y + dr.z*dr.z);
+      model->r2_escape = pow(model->r_ligand * 5., 2.);
+      cout << "> Bradius: " << model->r_ligand <<"A -- Qradius: " << sqrt(model->r2_escape) << "A" << endl;
+    }
+  }
 
   // Set optional parameters
   if(getInputWithFlag(argc, argv, 'R', &stoken)) { 
@@ -78,9 +115,9 @@ int main(int argc, char **argv) {
   }
 
   model->Nthreads = __cilkrts_get_nworkers();
-  cout << "* Parsing DLG..." << endl;
+  cout << "* Parsing DLG (" << dlgfn << ")..." << endl;
   model->parseDLG();
-  cout << "* Parsing FLD..." << endl;
+  cout << "* Parsing FLD (" << fldfn << ")..." << endl;
   model->parseFLD();
   cout << "* Initializing RNG..." << endl;
   model->initializeRNG(time(NULL));

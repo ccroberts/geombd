@@ -20,8 +20,9 @@ Model::Model() {
   r_ligand = 0.;
   R_ligand = { 0., 0., 0. };
   done = false;
-  dt_fine = 0.2;
-  dt_coarse = 10.0;
+  dt_fine = 0.005;
+  dt_coarse = 0.500;
+  cout << "> Timesteps: Fine="<<dt_fine<<" Coarse=" <<dt_coarse<<endl;
 }
 
 
@@ -79,20 +80,35 @@ void Model::run() {
     integrate();
     step++;
 
-    if(step % 50000 == 0) {
+    if(step % 20000 == 0) {
       t.stop();
       writeCoordinatesPQR();
       printRateConstant();
 
       done = true;
       active = 0;
+      double within500 = 0;
+      double within200 = 0;
       for(int i=0; i < ligands.size(); i++) {
         if(ligands[i]->done == false) {
           done = false;
           active++;
         }
+        if(ligands[i]->bound == false) {
+          vertex dr;
+          dr.x = bindingSite.x - ligands[i]->R.x;
+          dr.y = bindingSite.y - ligands[i]->R.y;
+          dr.z = bindingSite.z - ligands[i]->R.z;
+          double l = sqrt(dr.x*dr.x + dr.y*dr.y + dr.z*dr.z);
+          if(l < 500.) within500++;
+          if(l < 200.) within200++;
+        }
       }
-      cout << "Step #" << step << ". Rate: " << (t.duration/50000.) << " s/step. " << active << " simulations still active." << endl;
+      within500 /= ligands.size();
+      within200 /= ligands.size();
+      cout << "> Step #" << step << ". Rate: " << (t.duration/20000.) << " s/step. " << active << " simulations still active. ";
+      printf("L<500=%f \tL<200=%f", within500, within200);
+      cout << endl;
       t.start();
     }
   }
@@ -115,54 +131,26 @@ void Model::printRateConstant() {
 
   // calculate bound fraction and average binding time
   for(int i=0; i < ligands.size(); i++) {
-    if(ligandPosition == LIGAND_POSITION_RANDOM) {
-      if(ligands[i]->bound) {
-        Bb += 1.;
-        tb += ligands[i]->t;
-      }
-    }
-    if(ligandPosition == LIGAND_POSITION_ABSOLUTE) {
-      if(ligands[i]->bound) {
-        if(!ligands[i]->bulk) {
-          B += 1.;
-          t += ligands[i]->t;
-        } else {
-          Bb += 1.;
-          tb += ligands[i]->t;
-        }
-      }
-    }
-    if(ligandPosition == LIGAND_POSITION_RADIAL) {
-      if(ligands[i]->bound) {
-        B += 1.;
-        t += ligands[i]->t;
-      }
-      if(ligands[i]->bulk) {
-        Bb += 1;
-      }
+    if(ligands[i]->bound) {
+      B += 1.;
+      t += ligands[i]->t;
     }
   }
 
   //Association constants
-  if(ligandPosition == LIGAND_POSITION_ABSOLUTE) {
-    if(B > 0.) {
-      t *= 1e-12 / B; //average binding time, converted to seconds
-      B /= ligands.size();
-      k = B * (1. / (t));
-      printf("k_iet:   %.5e s⁻¹ (β = %.4f, t_avg = %.4e)\n", k, B, t);
-    }
-    if(Bb > 0.) {
-      tb *= 1e-12 / Bb;
-      Bb /= ligands.size();
-      k = Bb * (1. / (tb * C * C));
-      printf("k_bulk:     %.5e M⁻²s⁻¹ (β = %.4f, t_avg = %.4e s, rate = %.5e s⁻¹)\n", k, Bb, tb, Bb*(1. / tb));
-    }
-  }
-  if(ligandPosition == LIGAND_POSITION_RANDOM and Bb > 0.) {
-    tb *= 1e-12 / Bb;
-    Bb /= ligands.size();
-    k = Bb * (1. / (tb * C * C));
-    printf("k_bulk:     %.5e M⁻²s⁻¹ (β = %.4f, t_avg = %.4e s, rate = %.5e s⁻¹)\n", k, Bb, tb, Bb*(1. / tb));
+  if(ligandPosition == LIGAND_POSITION_ABSOLUTE and B > 0.) {
+    double kb = 4. * M_PI * r_ligand * ligands[0]->D;
+    double kd = 4. * M_PI * 5.*r_ligand * ligands[0]->D;
+
+    t *= 1e-12 / B; //average binding time, converted to seconds
+    B /= ligands.size();
+    k = B * (1. / (t));
+    printf("k_iet:   %.5e s⁻¹ (β = %.4f, t_avg = %.4e)\n", k, B, t);
+
+    k = (kd * B) / (1 - ((1 - B)*kb/kd));
+    k *= Na * 1e12 * 1e-27;
+
+    printf("k_on = %.5e M⁻¹s⁻¹ (β = %.4f, k_b = %.5e M⁻¹s⁻¹, k_d = %.5e M⁻¹s⁻¹)\n", k, B, kb * Na * 1e12 * 1e-27, kd * Na * 1e12 * 1e-27);
   }
   if(ligandPosition == LIGAND_POSITION_RADIAL and B > 0.) {
     double kb = 4. * M_PI * r_ligand * ligands[0]->D;
@@ -170,7 +158,7 @@ void Model::printRateConstant() {
     B /= ligands.size();
     k = (kd * B) / (1 - ((1 - B)*kb/kd));
     k *= Na * 1e12 * 1e-27;
-    printf("k_on = %.5e M⁻¹s⁻¹ (β = %.4f)\n", k, B);
+    printf("k_on = %.5e M⁻¹s⁻¹ (β = %.4f, k_b = %.5e M⁻¹s⁻¹, k_d = %.5e M⁻¹s⁻¹)\n", k, B, kb * Na * 1e12 * 1e-27, kd * Na * 1e12 * 1e-27);
   }
 }
 

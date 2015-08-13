@@ -2,7 +2,7 @@
 #include "Model.h"
 #include "Body.h"
 #include "Strings.h"
-#include "PotentialMap.h"
+#include "BinaryPotentialMap.h"
 #include "ESPotentialMap.h"
 #include "DPotentialMap.h"
 #include "Timer.h"
@@ -10,7 +10,7 @@
 
 
 void Model::parseFLD() {
-  string bfn, line, token;
+  string bfn, line, token, type;
   ifstream cfd;
 
   cfd.open(fldfn.c_str(), ifstream::in);
@@ -19,27 +19,25 @@ void Model::parseFLD() {
     parseNextValue(&line, &token);
 
     if(token.length() > 0) {
-      if(token == "variable") {
+      if(token == "bpm") {
+        parseNextValue(&line, &type);
         parseNextValue(&line, &token);
-        while(parseNextValue(&line, &token)) {
-          if(token.substr(0,5) == "file=") {
-            char type = token[token.length()-5];
-            if(type == 'e') {
+            if(type == "e") {
               cout << "* Loading electrostatic potential map...";
               cout.flush();
               Timer *t = new Timer();
               t->start();
-              esmaps.push_back(new ESPotentialMap(token.substr(5, token.length()-5)));
+              esmaps.push_back(new ESPotentialMap(token));
               t->stop();
               cout << " done. ";
               t->print(&cout);
             } else {
-              if(type == 'd') {
+              if(type == "d") {
                 cout << "* Loading desolvation potential map...";
                 cout.flush();
                 Timer *t = new Timer();
                 t->start();
-                esmaps.push_back(new DPotentialMap(token.substr(5, token.length()-5)));
+                esmaps.push_back(new DPotentialMap(token));
                 t->stop();
                 cout << " done. ";
                 t->print(&cout);
@@ -48,14 +46,12 @@ void Model::parseFLD() {
                 cout.flush();
                 Timer *t = new Timer();
                 t->start();
-                typemaps.push_back(new TypePotentialMap(token.substr(5, token.length()-5), type));
+                typemaps.push_back(new TypePotentialMap(token, type));
                 t->stop();
                 cout << " done. ";
                 t->print(&cout);
               }
             }
-          }
-        }
       }
     }
   }
@@ -84,19 +80,19 @@ void Model::parseDLG() {
           bj = new Bead();
           parseNextValue(&line, &token);
           parseNextValue(&line, &token);
-          if(token == "C") {
+          if(token[0] == 'C') {
             bj->m = 12.;
             bj->r = 1.7; 
           }
-          if(token == "N") {
+          if(token[0] == 'N') {
             bj->m = 14.;
             bj->r = 1.55; 
           }
-          if(token == "O") {
+          if(token[0] == 'O') {
             bj->m = 16.;
             bj->r = 1.52; 
           }
-          if(token == "H") {
+          if(token[0] == 'H') {
             bj->m = 1.;
             bj->r = 1.2; 
           }
@@ -168,26 +164,13 @@ void Model::parseDLG() {
       lig->translate(bindingSite.x + Q.x, bindingSite.y + Q.y, bindingSite.z + Q.z);
       lig->rotate(random(0., M_PI), random(0., M_PI), random(0., M_PI));
     }
-    r2_escape = pow(r_ligand * 5., 2.);
-    cout << "* Radial mode set. Bradius: " << r_ligand <<"A -- Qradius: " << sqrt(r2_escape) << "A" << endl;
   }
 
   if(ligandPosition == LIGAND_POSITION_ABSOLUTE) {
-    if(!(R_ligand.x == 0 and R_ligand.y == 0 and R_ligand.z == 0)) {
-
-      for(int i=0; i < ligands.size(); i++) {
-        Body *lig = ligands[i];
-        lig->center();
-        lig->translate(R_ligand.x, R_ligand.y, R_ligand.z);
-      }
-
-      vertex dr;
-      dr.x = bindingSite.x - R_ligand.x;
-      dr.y = bindingSite.y - R_ligand.y;
-      dr.z = bindingSite.z - R_ligand.z;
-      r_ligand = sqrt(dr.x*dr.x + dr.y*dr.y + dr.z*dr.z);
-    } else {
-      cout << "Absolute positioning, but with no initial translation. Relying on RBBD coordinates" << endl;
+    for(int i=0; i < ligands.size(); i++) {
+      Body *lig = ligands[i];
+      lig->center();
+      lig->translate(R_ligand.x, R_ligand.y, R_ligand.z);
     }
   }
 

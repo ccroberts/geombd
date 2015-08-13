@@ -29,7 +29,6 @@ class Body {
     double dt;
     bool done;     //no longer simulating
     bool bound;    //bound to binding site
-    bool bulk;     //left the simulation volume
 
   public:
     Body();

@@ -306,7 +306,7 @@ class ReceptorPDBQT {
       fd.open(filename.c_str(), ifstream::in);
       while(getline(fd, line)) {
         if(line[0] == '#') continue;
-        if(line.substr(0, 4) == "ATOM") {
+        if(line.substr(0, 4) == "ATOM" or line.substr(0, 6) == "HETATM") {
           // coordinates
           vertex R;
           R.x = stringToDouble(line.substr(30, 8));

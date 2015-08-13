@@ -12,7 +12,6 @@ Body::Body() {
   dt = 0.100;
   done = false;
   bound = false;
-  bulk = false;
 }
 
 
@@ -24,7 +23,6 @@ Body::Body(Model *mod) {
   dt = 0.100;
   done = false;
   bound = false;
-  bulk = false;
 }
 
 
@@ -104,9 +102,8 @@ void Body::define() {
     double Pl = (kB * model->T) / (6. * M_PI * model->viscosity);
     double Pa = (kB * model->T) / (8. * M_PI * model->viscosity);
     D  = (Pl / r) + (Pl / model->receptorRoG);
+    printf("> Assigning Dco=%f\tr=%f\n", D, r);
     Da = (Pa / pow(r, 3)) + (Pa / pow(model->receptorRoG, 3));
-    cout << "D:" << (Pl/r) << " D':" << D << endl;
-    cout << "Da:" << (Pa/pow(r, 3)) << " Da':" << Da << endl;
   } else {
     cout << "! Warning: You're using a Body object outside the context of a Model. Diffusion coefficients not calculated." << endl;
   }

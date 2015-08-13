@@ -3,15 +3,15 @@
 
 #include "Main.h"
 #include "Strings.h"
-#include "PotentialMap.h"
+#include "BinaryPotentialMap.h"
 
  
-class TypePotentialMap : public PotentialMap {
+class TypePotentialMap : public BinaryPotentialMap {
   public:
-    char type;
+    string type;
 
   public:
-    TypePotentialMap(string dx_filename, char atomtype) : PotentialMap(dx_filename) {
+    TypePotentialMap(string bpm_filename, string atomtype) : BinaryPotentialMap(bpm_filename) {
       type = atomtype;
     }
 

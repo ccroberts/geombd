@@ -1,7 +1,6 @@
 
 #include "Model.h"
 #include "Body.h"
-#include "MartiniNB.h"
 
 
 
@@ -78,8 +77,7 @@ void Model::integrate() {
         Bi->bound = true;
         Bi->done = true;
       }
-      if(ligandPosition == LIGAND_POSITION_RADIAL and l2 >= r2_escape) {
-        Bi->bulk = true;
+      if(/*ligandPosition == LIGAND_POSITION_RADIAL and */l2 >= r2_escape) {
         Bi->done = true;
       }
 
@@ -111,14 +109,16 @@ void Model::integrate() {
       Bi->t += dt;
       if(Bi->t > t_limit) Bi->done = true;
 
+      /*
       if(ligandPosition != LIGAND_POSITION_RADIAL) {
-        if(Bi->R.x > 0.5*bounds.x)  { Bi->translate(-bounds.x, 0., 0.); Bi->bulk = true; }
-        if(Bi->R.y > 0.5*bounds.y)  { Bi->translate(0., -bounds.y, 0.); Bi->bulk = true; }
-        if(Bi->R.z > 0.5*bounds.z)  { Bi->translate(0., 0., -bounds.z); Bi->bulk = true; }
-        if(Bi->R.x < -0.5*bounds.x) { Bi->translate(bounds.x, 0., 0.);  Bi->bulk = true; }
-        if(Bi->R.y < -0.5*bounds.y) { Bi->translate(0., bounds.y, 0.);  Bi->bulk = true; }
-        if(Bi->R.z < -0.5*bounds.z) { Bi->translate(0., 0., bounds.z);  Bi->bulk = true; }
+        if(Bi->R.x > 0.5*bounds.x)  { Bi->translate(-bounds.x, 0., 0.); }
+        if(Bi->R.y > 0.5*bounds.y)  { Bi->translate(0., -bounds.y, 0.); }
+        if(Bi->R.z > 0.5*bounds.z)  { Bi->translate(0., 0., -bounds.z); }
+        if(Bi->R.x < -0.5*bounds.x) { Bi->translate(bounds.x, 0., 0.);  }
+        if(Bi->R.y < -0.5*bounds.y) { Bi->translate(0., bounds.y, 0.);  }
+        if(Bi->R.z < -0.5*bounds.z) { Bi->translate(0., 0., bounds.z);  }
       }
+      */
     }
   }
 

@@ -8,7 +8,7 @@
  
 class DPotentialMap : public ESPotentialMap {
   public:
-    DPotentialMap(string dx_filename) : ESPotentialMap(dx_filename) {
+    DPotentialMap(string bpm_filename) : ESPotentialMap(bpm_filename) {
     }
 
     bool potential(vertex *R, double q, double *e) {
@@ -16,7 +16,7 @@ class DPotentialMap : public ESPotentialMap {
       bool onGrid = coordinateToGrid(R, (int*)&grid);
       if(!onGrid) return false;
 
-      *e = fabs(q) * data[grid[0]][grid[1]][grid[2]];
+      if(e) *e = fabs(q) * data[grid[0]][grid[1]][grid[2]];
 
       return true;
     }
@@ -38,7 +38,7 @@ class DPotentialMap : public ESPotentialMap {
       dU2[1] = (*e - data[grid[0]][grid[1]+1][grid[2]]) / (delta);
       dU2[2] = (*e - data[grid[0]][grid[1]][grid[2]+1]) / (delta);
 
-      *e *= fabs(q);
+      if(e) *e *= fabs(q);
 
       double qDiv2 = fabs(q) / 2;//wrap it all in
       F->x += qDiv2 * (dU1[0] + dU2[0]);
