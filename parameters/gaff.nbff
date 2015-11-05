@@ -1,0 +1,20 @@
+atom_par H      2.736     0.0157    # Non H-bonding Hydrogen
+atom_par C      3.816     0.0860    # Non H-bonding Aliphatic Carbon
+atom_par N      3.648     0.1700    # Non H-bonding Nitrogen
+atom_par O      3.40      0.2100    # Acceptor 2 H-bonds Oxygen
+atom_par S      4.00      0.2500    # Non H-bonding Sulphur
+atom_par P      4.20      0.200     # Non H-bonding Phosphorus
+atom_par F      3.50      0.0610    # Non H-bonding Fluorine
+atom_par Cl     3.896     0.2650    # Non H-bonding Chlorine
+atom_par Br     4.44      0.3200    # Non H-bonding Bromine
+atom_par I      4.70      0.4000    # Non H-bonding Iodine
+atom_par Mg     1.30      0.875     # Non H-bonding Magnesium
+atom_par Ca     1.98      0.550     # Non H-bonding Calcium
+atom_par Mn     1.30      0.875     # Non H-bonding Manganese
+atom_par Fe     1.30      0.010     # Non H-bonding Iron
+atom_par Zn     1.48      0.550     # Non H-bonding Zinc
+atom_par Z      4.00      0.150     # Non H-bonding covalent map
+atom_par G      4.00      0.150     # Ring closure Glue Aliphatic Carbon  # SF
+atom_par GA     4.00      0.150     # Ring closure Glue Aromatic Carbon   # SF
+atom_par J      4.00      0.150     # Ring closure Glue Aliphatic Carbon  # SF
+atom_par Q      4.00      0.150     # Ring closure Glue Aliphatic Carbon  # SF

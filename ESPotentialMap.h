@@ -8,7 +8,7 @@
  
 class ESPotentialMap : public BinaryPotentialMap {
   public:
-    ESPotentialMap(string bpm_filename) : BinaryPotentialMap(bpm_filename) {
+    ESPotentialMap(string bpm_filename, string atomtype) : BinaryPotentialMap(bpm_filename, atomtype) {
     }
 
     bool potential(vertex *R, double q, double *e) {
@@ -30,21 +30,16 @@ class ESPotentialMap : public BinaryPotentialMap {
 
       E = data[grid[0]][grid[1]][grid[2]];
 
-      double dU1[3], dU2[3];
-      dU1[0] = (data[grid[0]-1][grid[1]][grid[2]] - E) / (delta);
-      dU1[1] = (data[grid[0]][grid[1]-1][grid[2]] - E) / (delta);
-      dU1[2] = (data[grid[0]][grid[1]][grid[2]-1] - E) / (delta);
-
-      dU2[0] = (E - data[grid[0]+1][grid[1]][grid[2]]) / (delta);
-      dU2[1] = (E - data[grid[0]][grid[1]+1][grid[2]]) / (delta);
-      dU2[2] = (E - data[grid[0]][grid[1]][grid[2]+1]) / (delta);
+      double dU[3];
+      dU[0] = (data[grid[0]-1][grid[1]][grid[2]] - data[grid[0]+1][grid[1]][grid[2]]) / (2. * delta);
+      dU[1] = (data[grid[0]][grid[1]-1][grid[2]] - data[grid[0]][grid[1]+1][grid[2]]) / (2. * delta);
+      dU[2] = (data[grid[0]][grid[1]][grid[2]-1] - data[grid[0]][grid[1]][grid[2]+1]) / (2. * delta);
 
       if(e) *e = E * q;
 
-      double qDiv2 = q / 2;//wrap it all in
-      F->x += qDiv2 * (dU1[0] + dU2[0]);
-      F->y += qDiv2 * (dU1[1] + dU2[1]);
-      F->z += qDiv2 * (dU1[2] + dU2[2]);
+      F->x += q * dU[0];
+      F->y += q * dU[1];
+      F->z += q * dU[2];
 
       return true;
     }

@@ -8,11 +8,7 @@
  
 class TypePotentialMap : public BinaryPotentialMap {
   public:
-    string type;
-
-  public:
-    TypePotentialMap(string bpm_filename, string atomtype) : BinaryPotentialMap(bpm_filename) {
-      type = atomtype;
+    TypePotentialMap(string bpm_filename, string atomtype) : BinaryPotentialMap(bpm_filename, atomtype) {
     }
 
 };

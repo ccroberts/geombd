@@ -18,7 +18,12 @@ class BinaryPotentialMap {
     double ***data;
 
   public:
-    BinaryPotentialMap(string bpm_filename) {
+    string type;
+
+  public:
+    BinaryPotentialMap(string bpm_filename, string atomtype) {
+      type = atomtype;
+
       ifstream fd(bpm_filename.c_str(), ios::in | ios::binary);
 
       fd.read((char*)&origin, sizeof(double) * 3);
@@ -88,20 +93,16 @@ class BinaryPotentialMap {
 
       double E = data[grid[0]][grid[1]][grid[2]];
 
-      double dU1[3], dU2[3];
-      dU1[0] = (data[grid[0]-1][grid[1]][grid[2]] - E) / (delta);
-      dU1[1] = (data[grid[0]][grid[1]-1][grid[2]] - E) / (delta);
-      dU1[2] = (data[grid[0]][grid[1]][grid[2]-1] - E) / (delta);
-
-      dU2[0] = (E - data[grid[0]+1][grid[1]][grid[2]]) / (delta);
-      dU2[1] = (E - data[grid[0]][grid[1]+1][grid[2]]) / (delta);
-      dU2[2] = (E - data[grid[0]][grid[1]][grid[2]+1]) / (delta);
+      double dU[3];
+      dU[0] = (data[grid[0]-1][grid[1]][grid[2]] - data[grid[0]+1][grid[1]][grid[2]]) / (2. * delta);
+      dU[1] = (data[grid[0]][grid[1]-1][grid[2]] - data[grid[0]][grid[1]+1][grid[2]]) / (2. * delta);
+      dU[2] = (data[grid[0]][grid[1]][grid[2]-1] - data[grid[0]][grid[1]][grid[2]+1]) / (2. * delta);
 
       *e = E;
 
-      F->x += ((dU1[0] + dU2[0]) / 2.);
-      F->y += ((dU1[1] + dU2[1]) / 2.);
-      F->z += ((dU1[2] + dU2[2]) / 2.);
+      F->x += dU[0];
+      F->y += dU[1];
+      F->z += dU[2];
 
       return true;
     }

@@ -2,27 +2,37 @@
 #include "Body.h"
 #include "Strings.h"
 #include "Model.h"
-
+#include "Session.h"
 
  
 Body::Body() {
   model = NULL;
+  session = NULL;
 
   t = 0.;
   dt = 0.100;
   done = false;
   bound = false;
+
+  t_dwell = 0.;
+  t_dwell_max = 0.;
+  t_dwell_total = 0.;
 }
 
 
  
-Body::Body(Model *mod) {
-  model = mod;
+Body::Body(Model *m, Session *s) {
+  model = m;
+  session = s;
 
   t = 0.;
   dt = 0.100;
   done = false;
   bound = false;
+
+  t_dwell = 0.;
+  t_dwell_max = 0.;
+  t_dwell_total = 0.;
 }
 
 
@@ -102,7 +112,6 @@ void Body::define() {
     double Pl = (kB * model->T) / (6. * M_PI * model->viscosity);
     double Pa = (kB * model->T) / (8. * M_PI * model->viscosity);
     D  = (Pl / r) + (Pl / model->receptorRoG);
-    printf("> Assigning Dco=%f\tr=%f\n", D, r);
     Da = (Pa / pow(r, 3)) + (Pa / pow(model->receptorRoG, 3));
   } else {
     cout << "! Warning: You're using a Body object outside the context of a Model. Diffusion coefficients not calculated." << endl;
@@ -173,17 +182,18 @@ void writePDBBead(Bead *bi, unt index, char chain, fstream &outf) {
   outf << endl;
 }
 
-void Body::writePDB(string filename) {
-  fstream outf(filename.c_str(), ios::out | ios::app);
-  char chain = 'A';
+void Body::writePDB(fstream &outf, char chain) {
+  outf << "REMARK ";
+  if(bound) outf << " bound=true";
+  else if(done) outf << " done=true";
+  if(t_dwell_max > 0.) outf << " t_dwell_max=" << t_dwell_max;
+  if(t_dwell_total > 0.) outf << " t_dwell_total=" << t_dwell_total;
+  outf << endl;
 
   for(int i=0; i < beads.size(); i++) {
     Bead *bi = beads[i];
     writePDBBead(bi, i+1, chain, outf);
   }
-
-  outf << "END" << endl;
-  outf.close();
 }
 
 

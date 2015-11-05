@@ -6,12 +6,14 @@
 
  
 class Model;
+class Session;
 
 
  
 class Body {
   public:
     Model *model;
+    Session *session;
 
   public:
     int N;
@@ -31,13 +33,16 @@ class Body {
     bool bound;    //bound to binding site
 
   public:
+    double t_dwell, t_dwell_max, t_dwell_total;
+
+  public:
     Body();
-    Body(Model *mod);
+    Body(Model *m, Session *s);
     virtual ~Body();
 
   public:
     virtual void define();
-    void writePDB(string filename);
+    void writePDB(fstream &outf, char chain);
 
   public:
     virtual void translate(double dx, double dy, double dz);

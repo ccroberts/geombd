@@ -59,6 +59,25 @@ static inline bool parseNextValue(string *buffer, string *value) {
   return true;
 }
 
+// 
+static inline bool starts_with(string *buffer, string match) {
+  int n = match.length();
+  string begin = buffer->substr(0, n);
+  if(begin == match) {
+    return true;
+  }
+  return false;
+}
+
+static inline bool ends_with(string *buffer, string match) {
+  int n = match.length();
+  string ending = buffer->substr(buffer->length()-n, n);
+  if(ending == match) {
+    return true;
+  }
+  return false;
+}
+
 #define charToDouble(str) strtod(str, NULL)
 #define stringToFloat(cppstr) strtof(cppstr.c_str(), NULL)
 #define stringToDouble(cppstr) strtod(cppstr.c_str(), NULL)

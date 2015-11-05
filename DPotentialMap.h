@@ -8,7 +8,7 @@
  
 class DPotentialMap : public ESPotentialMap {
   public:
-    DPotentialMap(string bpm_filename) : ESPotentialMap(bpm_filename) {
+    DPotentialMap(string bpm_filename, string atomtype) : ESPotentialMap(bpm_filename, atomtype) {
     }
 
     bool potential(vertex *R, double q, double *e) {
@@ -27,23 +27,18 @@ class DPotentialMap : public ESPotentialMap {
       bool onGrid = coordinateToGrid(R, (int*)&grid);
       if(!onGrid) return false;
 
-      *e = data[grid[0]][grid[1]][grid[2]];
+      double E = data[grid[0]][grid[1]][grid[2]];
 
-      double dU1[3], dU2[3];
-      dU1[0] = (data[grid[0]-1][grid[1]][grid[2]] - *e) / (delta);
-      dU1[1] = (data[grid[0]][grid[1]-1][grid[2]] - *e) / (delta);
-      dU1[2] = (data[grid[0]][grid[1]][grid[2]-1] - *e) / (delta);
+      double dU[3];
+      dU[0] = (data[grid[0]-1][grid[1]][grid[2]] - data[grid[0]+1][grid[1]][grid[2]]) / (2. * delta);
+      dU[1] = (data[grid[0]][grid[1]-1][grid[2]] - data[grid[0]][grid[1]+1][grid[2]]) / (2. * delta);
+      dU[2] = (data[grid[0]][grid[1]][grid[2]-1] - data[grid[0]][grid[1]][grid[2]+1]) / (2. * delta);
 
-      dU2[0] = (*e - data[grid[0]+1][grid[1]][grid[2]]) / (delta);
-      dU2[1] = (*e - data[grid[0]][grid[1]+1][grid[2]]) / (delta);
-      dU2[2] = (*e - data[grid[0]][grid[1]][grid[2]+1]) / (delta);
+      if(e) *e = E * fabs(q);
 
-      if(e) *e *= fabs(q);
-
-      double qDiv2 = fabs(q) / 2;//wrap it all in
-      F->x += qDiv2 * (dU1[0] + dU2[0]);
-      F->y += qDiv2 * (dU1[1] + dU2[1]);
-      F->z += qDiv2 * (dU1[2] + dU2[2]);
+      F->x += fabs(q) * dU[0];
+      F->y += fabs(q) * dU[1];
+      F->z += fabs(q) * dU[2];
 
       return true;
     }

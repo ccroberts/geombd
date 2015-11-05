@@ -6,17 +6,9 @@
 #include "BinaryPotentialMap.h"
 #include "TypePotentialMap.h"
 #include "ESPotentialMap.h"
+#include "APBSPotentialMap.h"
+#include "Session.h"
 
-enum LigandPosition {
-  LIGAND_POSITION_RADIAL,
-  LIGAND_POSITION_ABSOLUTE,
-  LIGAND_POSITION_RANDOM
-};
-
-struct BindingSite {
-  double r2;
-  double x, y, z;
-};
 
  
 class Model {
@@ -24,9 +16,11 @@ class Model {
   friend class Receptor;
 
   public:
-    string fldfn, dlgfn;
-    void parseFLD();
-    void parseDLG();
+    string ifn;
+    void parseInputFile();
+    void parseReceptorPDBQT(string rfn);
+    void parseLigandPDBQT(string lfn);
+    void parseLigandDLG(string lfn);
 
   private:
     string ofn;
@@ -43,26 +37,23 @@ class Model {
   public:
     double T;
     double viscosity;
-    double t_limit;
-    vertex bounds;
-    double r2_escape;
     double receptorRoG;
 
-    LigandPosition ligandPosition;
-    double r_ligand;
-    vertex R_ligand;
+    vector< Session* > sessions;
+
+  public:
+    vector< Body* > ligands;
+    void populateLigands();
 
   public:
     vector< ESPotentialMap* > esmaps;
+    vector< APBSPotentialMap* > apbsmaps;
     vector< TypePotentialMap* > typemaps;
-    vector< Body* > conformations;
-    vector< Body* > ligands;
-    //vector< BindingSite > bindingSites;
-    BindingSite bindingSite;
+
+    vertex center;
 
   public:
     int Nthreads;
-    int Nreplicates;
     int active;
     int step;
     double dt_fine, dt_coarse;
@@ -70,7 +61,7 @@ class Model {
 
   public:
     Model();
-    Model(string fldfn, string dlgfn, string outputfn, double rRoG);
+    Model(string inputfn, string outputfn);
     ~Model();
 
   public:

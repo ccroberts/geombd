@@ -2,6 +2,8 @@
 
 import sys, math
 
+maxc = [0., 0., 0.]
+minc = [1e90, 1e90, 1e90]
 coords = []
 center = [0., 0., 0.]
 N = 0
@@ -27,9 +29,12 @@ for c in coords:
   for i in range(3):
     dr = c[i] - center[i]
     rmsd += dr * dr
+    maxc[i] = max([c[i], maxc[i]])
+    minc[i] = min([c[i], minc[i]])
 
 rmsd /= N
 rmsd = math.sqrt(rmsd)
-print('ROJ:', rmsd)
-print('Center:', center)
-
+print 'ROJ:', rmsd
+print 'Center:', center
+print 'Max:', maxc
+print 'Min:', minc

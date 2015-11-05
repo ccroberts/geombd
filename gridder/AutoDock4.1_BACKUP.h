@@ -141,23 +141,19 @@ typedef vector<Vec> PairMap;
 
 class AutoDockParameters {
   public:
-    /*
     double w_vdw;
     double w_hbond;
     double w_elec;
     double w_desolv;
-    */
 
     vector<string> types;
     vector<double> Rii;
     vector<double> epsii;
-    /*
     vector<double> vol;
     vector<double> solpar;
     vector<double> Rij_hb;
     vector<double> epsij_hb;
     vector<int> hbond_type;
-    */
 
     PairMap lj_map;
 
@@ -173,7 +169,6 @@ class AutoDockParameters {
 
         if(token.length() > 2) {
           // free energy weights
-          /*
           if(token.substr(0, 2) == "FE") {
             char weight_type = token.substr(9, 1)[0];
             parseNextValue(&line, &token);
@@ -193,7 +188,6 @@ class AutoDockParameters {
                 break;
             }
           }
-          */
           // everything else
           if(token == "atom_par") {
             parseNextValue(&line, &token);
@@ -202,7 +196,6 @@ class AutoDockParameters {
             Rii.push_back(stringToDouble(token));
             parseNextValue(&line, &token);
             epsii.push_back(stringToDouble(token));
-            /*
             parseNextValue(&line, &token);
             vol.push_back(stringToDouble(token));
             parseNextValue(&line, &token);
@@ -213,7 +206,6 @@ class AutoDockParameters {
             epsij_hb.push_back(stringToDouble(token));
             parseNextValue(&line, &token);
             hbond_type.push_back(stringToInt(token));
-            */
           }
         }
       }
@@ -224,13 +216,33 @@ class AutoDockParameters {
         for(int j=0; j < i+1; j++) {
           pair_parameter parm;
 
-          double rij = 0.5 * (Rii[i] + Rii[j]);
-          double eij = sqrt(epsii[i] * epsii[j]);
-          parm = {
-            /*A*/eij * pow(rij, 12),
-            /*B*/2. * eij * pow(rij, 6),
-            /*xB*/ (int)6
-          };
+          if(hbond_type[i] > 2 and (hbond_type[j] == 1 or hbond_type[j] == 2)) {
+            double rij = Rij_hb[i];
+            double eij = epsij_hb[i];
+            parm = {
+              /*C*/5. * eij * pow(rij, 12),
+              /*D*/6. * eij * pow(rij, 10),
+              /*xD*/ (int)10
+            };
+          }
+          if((hbond_type[i] == 1 || hbond_type[i] == 2) and hbond_type[j] > 2) {
+            double rij = Rij_hb[j];
+            double eij = epsij_hb[j];
+            parm = {
+              /*C*/5. * eij * pow(rij, 12),
+              /*D*/6. * eij * pow(rij, 10),
+              /*xD*/ (int)10
+            };
+          }
+          if(hbond_type[i] == 0 || hbond_type[j] == 0) {
+            double rij = 0.5 * (Rii[i] + Rii[j]);
+            double eij = sqrt(epsii[i] * epsii[j]);
+            parm = {
+              /*A*/eij * pow(rij, 12),
+              /*B*/2. * eij * pow(rij, 6),
+              /*xB*/ (int)6
+            };
+          }
 
           lj_map[i].push_back(parm);
         }

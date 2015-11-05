@@ -2,16 +2,19 @@
 #include "Model.h"
 #include "Body.h"
 
+//temp
+#include <cilk/reducer_min.h>
 
 
 void Model::integrate() {
+
   generateNormal();
 
   cilk_for(int il=0; il < ligands.size(); il++) {
     Body *Bi = ligands[il];
 
     if(! Bi->done) {
-      bool onGrid = false;
+      bool onGrid = false, associated = false;
       double E;
 
       // Calculate forces
@@ -20,25 +23,62 @@ void Model::integrate() {
         bi->F.x = 0.;
         bi->F.y = 0.;
         bi->F.z = 0.;
+        vertex dF;
+        dF.x = 0.;
+        dF.y = 0.;
+        dF.z = 0.;
         
         if(bi->q != 0.) {
           for(int es=0; es < esmaps.size(); es++) {
-            if(esmaps[es]->force(&bi->R, &bi->F, bi->q, &E)) {
+            if(esmaps[es]->force(&bi->R, &dF, bi->q, &E)) {
               onGrid = true;
+              bi->F.x += dF.x;
+              bi->F.y += dF.y;
+              bi->F.z += dF.z;
+            }
+          }
+          for(int apbs=0; apbs < apbsmaps.size(); apbs++) {
+            if(apbsmaps[apbs]->force(&bi->R, &dF, bi->q, &E)) {
+              onGrid = true;
+              bi->F.x += dF.x;
+              bi->F.y += dF.y;
+              bi->F.z += dF.z;
             }
           }
         }
 
         for(int tmap=0; tmap < typemaps.size(); tmap++) {
           if(typemaps[tmap]->type == bi->type) {
-            if(typemaps[tmap]->force(&bi->R, &bi->F, &E)) {
+            if(typemaps[tmap]->force(&bi->R, &dF, &E)) {
               onGrid = true;
+              if(fabs(E) > 0) {
+                associated = true;
+              }
+              bi->F.x += dF.x;
+              bi->F.y += dF.y;
+              bi->F.z += dF.z;
             }
           }
         }
       }
 
+      // determine timestep
+      double dt = (onGrid) ? dt_fine : dt_coarse;
+      double dtOVERkBT = dt / (kB * T);
 
+      // record dwell-time
+      if(onGrid and associated) {
+        Bi->t_dwell += dt;
+        Bi->t_dwell_total += dt;
+        if(Bi->t_dwell > Bi->t_dwell_max) Bi->t_dwell_max = Bi->t_dwell;
+      } else {
+        if(Bi->t_dwell > 0.) {
+          if(Bi->t_dwell > Bi->t_dwell_max) Bi->t_dwell_max = Bi->t_dwell;
+          Bi->t_dwell = 0.;
+        }
+      }
+
+      // Propogate bead forces to body
       Bi->F.x = 0.;
       Bi->F.y = 0.;
       Bi->F.z = 0.;
@@ -46,7 +86,6 @@ void Model::integrate() {
       Bi->Fa.y = 0.;
       Bi->Fa.z = 0.;
 
-      // Propogate bead forces to body
       for(int k=0; k < Bi->beads.size(); k++) {
         Bead *bk = Bi->beads[k];
 
@@ -66,22 +105,6 @@ void Model::integrate() {
         Bi->Fa.z += B.z;
       }
 
-      double dt = (onGrid) ? dt_fine : dt_coarse;
-      double dr[3], l2;
-      dr[0] = Bi->R.x - bindingSite.x;
-      dr[1] = Bi->R.y - bindingSite.y;
-      dr[2] = Bi->R.z - bindingSite.z;
-      l2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
-      if(l2 < bindingSite.r2) {
-        cout << "bind: " << Bi->t << endl;
-        Bi->bound = true;
-        Bi->done = true;
-      }
-      if(/*ligandPosition == LIGAND_POSITION_RADIAL and */l2 >= r2_escape) {
-        Bi->done = true;
-      }
-
-      double dtOVERkBT = dt / (kB * T);
 
       // Integrate
       vertex *Si = &rand[il];
@@ -90,35 +113,78 @@ void Model::integrate() {
       vertex dR, dRa;
       double A = sqrt(2. * Bi->D * dt);
       double B = Bi->D * dtOVERkBT;
-
       dR.x = (A * Si->x) + (B * Bi->F.x);
       dR.y = (A * Si->y) + (B * Bi->F.y);
       dR.z = (A * Si->z) + (B * Bi->F.z);
-
       Bi->translate(dR.x, dR.y, dR.z);
 
       double C = sqrt(2 * Bi->Da * dt);
       double D = Bi->Da * dtOVERkBT;
-
       dRa.x = (C * Sai->x) + (D * Bi->Fa.x);
       dRa.y = (C * Sai->y) + (D * Bi->Fa.y);
       dRa.z = (C * Sai->z) + (D * Bi->Fa.z);
-
       Bi->rotate(dRa.x, dRa.y, dRa.z);
 
+      // increment time
       Bi->t += dt;
-      if(Bi->t > t_limit) Bi->done = true;
 
-      /*
-      if(ligandPosition != LIGAND_POSITION_RADIAL) {
-        if(Bi->R.x > 0.5*bounds.x)  { Bi->translate(-bounds.x, 0., 0.); }
-        if(Bi->R.y > 0.5*bounds.y)  { Bi->translate(0., -bounds.y, 0.); }
-        if(Bi->R.z > 0.5*bounds.z)  { Bi->translate(0., 0., -bounds.z); }
-        if(Bi->R.x < -0.5*bounds.x) { Bi->translate(bounds.x, 0., 0.);  }
-        if(Bi->R.y < -0.5*bounds.y) { Bi->translate(0., bounds.y, 0.);  }
-        if(Bi->R.z < -0.5*bounds.z) { Bi->translate(0., 0., bounds.z);  }
+      if(Bi->session->type == CONFIGURATION_ABSOLUTE_PERIODIC) {
+        // check for periodic wrapping
+        SessionAbsolutePeriodic *sap = (SessionAbsolutePeriodic*)Bi->session;
+        if(Bi->R.x > 0.5*sap->bounds.x)  { Bi->translate(-sap->bounds.x, 0., 0.); }
+        if(Bi->R.y > 0.5*sap->bounds.y)  { Bi->translate(0., -sap->bounds.y, 0.); }
+        if(Bi->R.z > 0.5*sap->bounds.z)  { Bi->translate(0., 0., -sap->bounds.z); }
+        if(Bi->R.x < -0.5*sap->bounds.x) { Bi->translate(sap->bounds.x, 0., 0.);  }
+        if(Bi->R.y < -0.5*sap->bounds.y) { Bi->translate(0., sap->bounds.y, 0.);  }
+        if(Bi->R.z < -0.5*sap->bounds.z) { Bi->translate(0., 0., sap->bounds.z);  }
+
+        // check for timed-out ligands
+        if(Bi->t >= sap->t_max) {
+          cout << "#" << Bi->session->id << "\t Time-out event" << endl;
+          Bi->done = true;
+          Bi->session->Ntlim++;
+        }
       }
-      */
+
+      // check for binding
+      double dr[3], l2;
+      for(int bs=0; bs < Bi->session->bindingSites.size(); bs++) {
+        BindingSite bindingSite = Bi->session->bindingSites[bs];
+        dr[0] = Bi->R.x - bindingSite.x;
+        dr[1] = Bi->R.y - bindingSite.y;
+        dr[2] = Bi->R.z - bindingSite.z;
+        l2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
+        if(l2 < bindingSite.r2) {
+          cout << "#" << Bi->session->id << "\t Binding event at t=" << Bi->t << " ps" << endl;
+          Bi->bound = true;
+          Bi->done = true;
+          Bi->session->Nbind++;
+        }
+      }
+
+      // check for escape
+      if(Bi->session->type == CONFIGURATION_RADIAL or Bi->session->type == CONFIGURATION_ABSOLUTE_RADIAL) {
+        dr[0] = Bi->R.x - center.x;
+        dr[1] = Bi->R.y - center.y;
+        dr[2] = Bi->R.z - center.z;
+        l2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
+        if(Bi->session->type == CONFIGURATION_RADIAL) {
+          SessionRadial *sr = (SessionRadial*)Bi->session;
+          if(l2 >= sr->q2) {
+            Bi->done = true;
+            sr->Nexit += 1;
+            cout << "#" << Bi->session->id << "\t Escape event at t=" << Bi->t << " ps" << endl;
+          }
+        }
+        if(Bi->session->type == CONFIGURATION_ABSOLUTE_RADIAL) {
+          SessionAbsoluteRadial *sar = (SessionAbsoluteRadial*)Bi->session;
+          if(l2 >= sar->q2) {
+            Bi->done = true;
+            sar->Nexit += 1;
+            cout << "#" << Bi->session->id << "\t Escape event at t=" << Bi->t << " ps" << endl;
+          }
+        }
+      }
     }
   }
 

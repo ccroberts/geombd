@@ -40,6 +40,8 @@ void Model::writeCoordinatesPQR() {
   for(int b=0; b < ligands.size(); b++) {
     Body *ligand = ligands[b];
 
+    ligand->writePDB(outf, chain);
+    /*
     for(int i=0; i < ligand->beads.size(); i++) {
       index++;
       if(index >= 100000) index = 1;
@@ -47,6 +49,7 @@ void Model::writeCoordinatesPQR() {
       Bead *bi = ligand->beads[i];
       writeBead(bi, index, chain, outf);
     }
+    */
 
     chain++;
     if(chain > 'z') chain = 'A';

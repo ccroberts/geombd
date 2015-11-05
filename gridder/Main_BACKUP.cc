@@ -1,6 +1,6 @@
 #include "../Main.h"
 #include "Strings.h"
-#include "GAFF.h"
+#include "AutoDock4.1.h"
 #include "Timer.h"
 
 bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
@@ -24,7 +24,7 @@ bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
 
 
 void usage() {
-  printf("Usage: gridder -d [AD4.1.DAT] -n NTHREADS(=max) -r [Receptor.PDBQT] -l [Ligand.PDBQT] (Optional: -p GRID_PADDING(=40A) -s GRID_SPACING(=0.375A))\n");
+  printf("Usage: gridder -d [AD4.1.DAT] -n NTHREADS(=max) -r [Receptor.PDBQT] -l [Ligand.PDBQT] -f [BPM field index] (Optional: -q [[Ion+1](=0.001M),[Ion-1](=0.001M),[Ion+2](=0M),[Ion-2](=0M)] -p GRID_PADDING(=40A) -s GRID_SPACING(=0.375A))\n");
 }
 
 
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
   double grid_resolution = 0.375;
   double padding = 40., padding_sqr;
 
-  // GAFF parameter file
+  // AutoDock parameter file
   if(!getInputWithFlag(argc, argv, 'd', &datfn)) { usage(); return -1; }
   // receptor pdbqt
   if(!getInputWithFlag(argc, argv, 'r', &recfn)) { usage(); return -1; }
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
   }
 
   // Load AD parameters
-  GAFFParameters *adp = new GAFFParameters(datfn);
+  AutoDockParameters *adp = new AutoDockParameters(datfn);
   LigandPDBQT *lig = new LigandPDBQT(ligfn);
 
   cout << "> Types in ligand:";
@@ -66,13 +66,10 @@ int main(int argc, char **argv) {
     for(int j=0; j < adp->types.size(); j++) {
       if(adp->types[j] == *it) found = true;
     }
-    if(found) cout << ' ' << *it;
-    else {
-      cout << "! Error: Ligand atom type " << *it << " not found in the GAFF parameters." << endl;
-      exit(-1);
+    if(!found) {
+      cout << "! Error: Ligand atom type " << *it << " not found in the AutoDock parameters." << endl;
     }
   }
-  cout << endl;
 
   // Load receptor file
   cout << "> Loading receptor PDBQT..." << endl;
@@ -93,7 +90,7 @@ int main(int argc, char **argv) {
       if(adp->types[j] == *it) found = true;
     }
     if(!found) {
-      cout << "! Error: Ligand atom type " << *it << " not found in the GAFF parameters." << endl;
+      cout << "! Error: Ligand atom type " << *it << " not found in the AutoDock parameters." << endl;
       return EXIT_FAILURE;
     }
   }
@@ -168,6 +165,7 @@ int main(int argc, char **argv) {
           data_t[at][nz] = 0;
 
         for(int i=0; i < rec->coordinates.size(); i++) {
+          if(rec->charges[i] == 0.) continue;
           vertex Rrec = rec->coordinates[i];
           vertex dr;
           dr.x = X - Rrec.x; 
@@ -184,14 +182,16 @@ int main(int argc, char **argv) {
           //data_d[nz] += du_d;
           // Iterate of each ligand atom type and calc VDW/HB
           int rec_type = rec->types[i];
-          double dist_6 = dist_sqr * dist_sqr * dist_sqr;
+          double dist_4 = dist_sqr * dist_sqr;
+          double dist_6 = dist_sqr * dist_4;
           double dist_12 = dist_6 * dist_6;
           for(int at=0; at < type_t.size(); at++) {
             int lig_type = type_t[at];
             pair_parameter parm;
             if(lig_type > rec_type) parm = adp->lj_map[lig_type][rec_type];
             else parm = adp->lj_map[rec_type][lig_type];
-            double du_t = (parm.A / dist_12) - (parm.B / dist_6);
+            double denominator_b = (parm.xB == 10) ? (dist_4 * dist_6) : (dist_6);
+            double du_t = (parm.A / dist_12) - (parm.B / denominator_b);
             data_t[at][nz] += du_t;
           }
         }
