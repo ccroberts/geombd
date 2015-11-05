@@ -291,23 +291,23 @@ void Model::parseLigandPDBQT(string lfn) {
       if(at == "FE") at = "Fe";
       if(at == "ZN") at = "Zn";
 
-      if(at == "C") {
+      if(at == "C " or at == "C") {
         bj->m = 12.;
         bj->r = 1.7; 
       }
-      if(at == "N") {
+      if(at == "N " or at == "N") {
         bj->m = 14.;
         bj->r = 1.55; 
       }
-      if(at == "O") {
+      if(at == "O " or at == "O") {
         bj->m = 16.;
         bj->r = 1.52; 
       }
-      if(at == "H") {
+      if(at == "H " or at == "H") {
         bj->m = 1.;
         bj->r = 1.2; 
       }
-      if(at == "S") {
+      if(at == "S " or at == "S") {
         bj->m = 32.;
         bj->r = 1.8; 
       }
