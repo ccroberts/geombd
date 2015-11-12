@@ -8,13 +8,13 @@
 #include "DPotentialMap.h"
 #include "Timer.h"
 #include "Session.h"
+#include "BindingCriteria.h"
 
 
 
 void Model::parseInputFile() {
   string lfn, line, token, type;
   ifstream cfd;
-  BindingSite bs;
 
   cfd.open(ifn.c_str(), ifstream::in);
   while(getline(cfd, line)) {
@@ -63,6 +63,17 @@ void Model::parseInputFile() {
         Timer *t = new Timer();
         t->start();
         apbsmaps.push_back(new APBSPotentialMap(token, kB * T));
+        t->stop();
+        cout << " done. ";
+        t->print(&cout);
+      }
+      if(token == "ex") {
+        parseNextValue(&line, &token);
+        cout << "* Loading exclusion map...";
+        cout.flush();
+        Timer *t = new Timer();
+        t->start();
+        xmaps.push_back(new ExclusionMap(token, "x"));
         t->stop();
         cout << " done. ";
         t->print(&cout);
@@ -141,17 +152,23 @@ void Model::parseInputFile() {
           cout << " + Ligand starting position: " << _fx << ", " << _fy << ", " << _fz << endl;
         }
       }
-      if(token == "bind") {
-        parseNextValue(&line, &token);
-        bs.x = stringToDouble(token);
-        parseNextValue(&line, &token);
-        bs.y = stringToDouble(token);
-        parseNextValue(&line, &token);
-        bs.z = stringToDouble(token);
-        parseNextValue(&line, &token);
-        bs.r2 = pow(stringToDouble(token), 2);
-        sessions[sessions.size()-1]->bindingSites.push_back(bs);
-        cout << " + Binding site: " << bs.x << ", " << bs.y << ", " << bs.z << " radius: " << sqrt(bs.r2) << endl;
+      if(token == "bindc") {
+        BindingCriteria *bc = new BindingCriteria();
+        cout << " + Binding criteria: " << endl;
+        while(parseNextValue(&line, &token)) {
+          double bx = stringToDouble(token);
+          parseNextValue(&line, &token);
+          double by = stringToDouble(token);
+          parseNextValue(&line, &token);
+          double bz = stringToDouble(token);
+          parseNextValue(&line, &token);
+          int laid = stringToInt(token);
+          parseNextValue(&line, &token);
+          double r = stringToDouble(token);
+          bc->addPair(bx, by, bz, laid-1, r);
+          cout << "    - LAID: " << laid << " within " << r << "A of (" << bx << " " << by << " " << bz << ")" << endl;
+        }
+        sessions[sessions.size()-1]->bindingCriteria.push_back(bc);
       }
       if(token == "bounds") {
         parseNextValue(&line, &token);
@@ -203,7 +220,6 @@ void Model::parseInputFile() {
   }
 
   cfd.close();
-
 }
 
 

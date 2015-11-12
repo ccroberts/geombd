@@ -1,6 +1,7 @@
 #include "Session.h"
 #include "Model.h"
 #include "Body.h"
+#include "BindingCriteria.h"
 
  
 Session::Session(Model *m, SimulationConfig s) {
@@ -121,17 +122,6 @@ void SessionAbsolutePeriodic::populateLigands() {
     Davg += conformations[i]->D;
   }
   Davg /= conformations.size();
-
-  vertex dr;
-  double bavg = 0.;
-  for(int i=0; i < bindingSites.size(); i++) {
-    dr.x = start.x - bindingSites[i].x;
-    dr.y = start.y - bindingSites[i].y;
-    dr.z = start.z - bindingSites[i].z;
-    bavg += sqrt(dr.x*dr.x + dr.y*dr.y + dr.z*dr.z);
-  }
-  bavg /= bindingSites.size();
-  b = bavg;
 }
 
 void SessionAbsolutePeriodic::printRateConstant() {
@@ -189,17 +179,6 @@ void SessionAbsoluteRadial::populateLigands() {
     Davg += conformations[i]->D;
   }
   Davg /= conformations.size();
-
-  vertex dr;
-  double bavg = 0.;
-  for(int i=0; i < bindingSites.size(); i++) {
-    dr.x = start.x - bindingSites[i].x;
-    dr.y = start.y - bindingSites[i].y;
-    dr.z = start.z - bindingSites[i].z;
-    bavg += sqrt(dr.x*dr.x + dr.y*dr.y + dr.z*dr.z);
-  }
-  bavg /= bindingSites.size();
-  b = bavg;
 }
 
 void SessionAbsoluteRadial::printRateConstant() {

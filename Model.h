@@ -8,6 +8,7 @@
 #include "ESPotentialMap.h"
 #include "APBSPotentialMap.h"
 #include "Session.h"
+#include "ExclusionMap.h"
 
 
  
@@ -49,6 +50,7 @@ class Model {
     vector< ESPotentialMap* > esmaps;
     vector< APBSPotentialMap* > apbsmaps;
     vector< TypePotentialMap* > typemaps;
+    vector< ExclusionMap* > xmaps;
 
     vertex center;
 

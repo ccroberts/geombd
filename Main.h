@@ -62,11 +62,12 @@ enum SimulationConfig {
   CONFIGURATION_ABSOLUTE_PERIODIC
 };
 
+/*
 struct BindingSite {
   double r2;
   double x, y, z;
 };
-
+*/
 
 
 typedef unsigned int unt;

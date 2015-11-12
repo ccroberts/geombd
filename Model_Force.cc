@@ -1,9 +1,8 @@
 
 #include "Model.h"
 #include "Body.h"
+#include "BindingCriteria.h"
 
-//temp
-#include <cilk/reducer_min.h>
 
 
 void Model::integrate() {
@@ -66,17 +65,6 @@ void Model::integrate() {
       double dt = (onGrid) ? dt_fine : dt_coarse;
       double dtOVERkBT = dt / (kB * T);
 
-      // record dwell-time
-      if(onGrid and associated) {
-        Bi->t_dwell += dt;
-        Bi->t_dwell_total += dt;
-        if(Bi->t_dwell > Bi->t_dwell_max) Bi->t_dwell_max = Bi->t_dwell;
-      } else {
-        if(Bi->t_dwell > 0.) {
-          if(Bi->t_dwell > Bi->t_dwell_max) Bi->t_dwell_max = Bi->t_dwell;
-          Bi->t_dwell = 0.;
-        }
-      }
 
       // Propogate bead forces to body
       Bi->F.x = 0.;
@@ -125,8 +113,41 @@ void Model::integrate() {
       dRa.z = (C * Sai->z) + (D * Bi->Fa.z);
       Bi->rotate(dRa.x, dRa.y, dRa.z);
 
-      // increment time
-      Bi->t += dt;
+      bool valid = true;
+      for(int i=0; i < Bi->beads.size(); i++) {
+        Bead *bi = Bi->beads[i];
+        vertex tR = { bi->R.x + dR.x, bi->R.y + dR.y, bi->R.z + dR.z };
+
+        for(int ex=0; ex < xmaps.size(); ex++) {
+          ExclusionMap *em = xmaps[ex];
+          if(em->onGrid(&tR)) {
+            short v = xmaps[ex]->value(&tR);
+            if(v == 1)  {
+              Bi->translate(-dR.x, -dR.y, -dR.z);
+              Bi->rotate(-dRa.x, -dRa.y, -dRa.z);
+              valid = false;
+              break;
+            }
+          }
+        }
+        if(!valid) break;
+      }
+      if(valid) {
+        // increment time
+        Bi->t += dt;
+        // record dwell-time
+        if(onGrid and associated) {
+          Bi->t_dwell += dt;
+          Bi->t_dwell_total += dt;
+          if(Bi->t_dwell > Bi->t_dwell_max) Bi->t_dwell_max = Bi->t_dwell;
+        } else {
+          if(Bi->t_dwell > 0.) {
+            if(Bi->t_dwell > Bi->t_dwell_max) Bi->t_dwell_max = Bi->t_dwell;
+            Bi->t_dwell = 0.;
+          }
+        }
+      }
+
 
       if(Bi->session->type == CONFIGURATION_ABSOLUTE_PERIODIC) {
         // check for periodic wrapping
@@ -147,22 +168,19 @@ void Model::integrate() {
       }
 
       // check for binding
-      double dr[3], l2;
-      for(int bs=0; bs < Bi->session->bindingSites.size(); bs++) {
-        BindingSite bindingSite = Bi->session->bindingSites[bs];
-        dr[0] = Bi->R.x - bindingSite.x;
-        dr[1] = Bi->R.y - bindingSite.y;
-        dr[2] = Bi->R.z - bindingSite.z;
-        l2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
-        if(l2 < bindingSite.r2) {
+      for(int bs=0; bs < Bi->session->bindingCriteria.size(); bs++) {
+        BindingCriteria* bc = Bi->session->bindingCriteria[bs];
+        if(bc->checkBinding(Bi)) {
           cout << "#" << Bi->session->id << "\t Binding event at t=" << Bi->t << " ps" << endl;
           Bi->bound = true;
           Bi->done = true;
           Bi->session->Nbind++;
+          bc->Nbind++;
         }
       }
 
       // check for escape
+      double dr[3], l2;
       if(Bi->session->type == CONFIGURATION_RADIAL or Bi->session->type == CONFIGURATION_ABSOLUTE_RADIAL) {
         dr[0] = Bi->R.x - center.x;
         dr[1] = Bi->R.y - center.y;

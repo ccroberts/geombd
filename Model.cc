@@ -26,7 +26,6 @@ Model::Model(string inputfn, string outputfn) : Model() {
 
   parseInputFile();
   populateLigands();
-
   initializeRNG(time(NULL));
 }
 

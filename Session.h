@@ -5,6 +5,7 @@
 
 class Model;
 class Body;
+class BindingCriteria;
 
  
 class Session {
@@ -21,7 +22,7 @@ class Session {
     double Davg;
     vector< Body* > conformations;
     vector< Body* > ligands;
-    vector< BindingSite > bindingSites;
+    vector< BindingCriteria* > bindingCriteria;
 
   public:
     Session(Model *m, SimulationConfig s);

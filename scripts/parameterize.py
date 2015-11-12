@@ -20,7 +20,7 @@ for line in open(fffn, 'r'):
 def process_receptor(ff, resname, resid, resdata):
   if resname in ff.keys():
     for line in resdata:
-      at = line[13:16].strip()
+      at = line[12:16].strip()
       try:
         param = ff[resname][at]
         print '%s  1.00  0.00   %7.3f %s' % (line[:54], param[0], param[1])
@@ -62,7 +62,7 @@ resd = []
 for line in open(pdbfn, 'r'):
   if line.startswith('ATOM') or line.startswith('HETATM'):
     rid = int(line[23:26])
-    rnm = line[17:20]
+    rnm = line[17:20].strip()
     if rid != resi:
       if resi == -6969:
         tnm = 'N%s' % rnm
@@ -75,8 +75,9 @@ for line in open(pdbfn, 'r'):
     resd.append(line)
     if line[13:16] == 'OXT': resn = 'C%s' % resn
   if line.startswith('TER') or line.startswith('END'):
-    process_receptor(ff, resn, resi, resd)
-    resi = -6969
-    resd = []
-    resn = None
+    if len(resd) != 0:
+      process_receptor(ff, resn, resi, resd)
+      resi = -6969
+      resd = []
+      resn = None
 
