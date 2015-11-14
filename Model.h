@@ -21,7 +21,6 @@ class Model {
     void parseInputFile();
     void parseReceptorPDBQT(string rfn);
     void parseLigandPDBQT(string lfn);
-    void parseLigandDLG(string lfn);
 
   private:
     string ofn;

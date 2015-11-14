@@ -74,10 +74,11 @@ for line in open(pdbfn, 'r'):
       resn = rnm
     resd.append(line)
     if line[13:16] == 'OXT': resn = 'C%s' % resn
-  if line.startswith('TER') or line.startswith('END'):
+  if line.startswith('END'):
     if len(resd) != 0:
       process_receptor(ff, resn, resi, resd)
       resi = -6969
       resd = []
       resn = None
+      print 'END'
 

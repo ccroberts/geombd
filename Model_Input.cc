@@ -120,11 +120,11 @@ void Model::parseInputFile() {
         parseNextValue(&line, &token); //ligand filename
         if(ends_with(&token, "pdbqt")) parseLigandPDBQT(token);
         else {
-          if(ends_with(&token, "dlg")) parseLigandDLG(token);
-          else {
-            cout << "! Ligand input file not of type PDBQT or DLG" << endl;
+          //if(ends_with(&token, "dlg")) parseLigandDLG(token);
+          //else {
+            cout << "! Ligand input file not of type PDBQT. Quitting." << endl;
             exit(EXIT_FAILURE);
-          }
+          //}
         }
         parseNextValue(&line, &token); //Nreplicates
         sessions[sessions.size()-1]->Nreplicates = stringToInt(token);
@@ -279,10 +279,13 @@ void Model::parseLigandPDBQT(string lfn) {
   Body *bi = new Body(this, sessions[sessions.size()-1]);
   Bead *bj = NULL;
 
+  int Nconfs = 0;
+
   ifstream fd(lfn);
 
   while(getline(fd, line)) {
-    if(starts_with(&line, "ATOM")) {
+    if(starts_with(&line, "ATOM") or starts_with(&line, "HETATM")) {
+      if(bi == NULL) bi = new Body(this, sessions[sessions.size()-1]);
       bj = new Bead();
 
       char element = line[13];
@@ -339,14 +342,20 @@ void Model::parseLigandPDBQT(string lfn) {
       cout << "> Atom type: " << at << endl;
       bi->beads.push_back(bj);
     }
+    if(starts_with(&line, "END")) {
+      if(bi != NULL) {
+        sessions[sessions.size()-1]->conformations.push_back(bi);
+        bi->define();
+        bi = NULL;
+        Nconfs++;
+      }
+    }
   }
-  sessions[sessions.size()-1]->conformations.push_back(bi);
-  bi->define();
-  cout << " + Loaded 1 ligand conformation" << endl;
+  cout << " + Loaded " << Nconfs << " ligand conformation" << endl;
 }
 
 
-void Model::parseLigandDLG(string lfn) {
+/*void Model::parseLigandPDB(string lfn) {
   string line, token;
   Body *bi;
   Bead *bj;
@@ -424,7 +433,7 @@ void Model::parseLigandDLG(string lfn) {
   }
 
   cout << " + Loaded " << sessions[sessions.size()-1]->conformations.size() << " ligand conformations" << endl;
-}
+}*/
 
 
 
