@@ -163,7 +163,7 @@ void Model::integrate() {
         if(Bi->t >= sap->t_max) {
           cout << "#" << Bi->session->id << "\t Time-out event" << endl;
           Bi->done = true;
-          Bi->session->Ntlim++;
+          *Bi->session->Ntlim += 1;
         }
       }
 
@@ -174,8 +174,8 @@ void Model::integrate() {
           cout << "#" << Bi->session->id << "\t Binding event at t=" << Bi->t << " ps" << endl;
           Bi->bound = true;
           Bi->done = true;
-          Bi->session->Nbind++;
-          bc->Nbind++;
+          *Bi->session->Nbind += 1;
+          *bc->Nbind += 1;
         }
       }
 
@@ -190,7 +190,7 @@ void Model::integrate() {
           SessionRadial *sr = (SessionRadial*)Bi->session;
           if(l2 >= sr->q2) {
             Bi->done = true;
-            sr->Nexit += 1;
+            *sr->Nexit += 1;
             cout << "#" << Bi->session->id << "\t Escape event at t=" << Bi->t << " ps" << endl;
           }
         }
@@ -198,7 +198,7 @@ void Model::integrate() {
           SessionAbsoluteRadial *sar = (SessionAbsoluteRadial*)Bi->session;
           if(l2 >= sar->q2) {
             Bi->done = true;
-            sar->Nexit += 1;
+            *sar->Nexit += 1;
             cout << "#" << Bi->session->id << "\t Escape event at t=" << Bi->t << " ps" << endl;
           }
         }

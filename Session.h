@@ -16,9 +16,9 @@ class Session {
     Model *model;
     SimulationConfig type;
     int Nreplicates;
-    int Nbind;
-    int Nexit;
-    int Ntlim;
+    cilk::reducer< cilk::op_add<int> > Nbind;
+    cilk::reducer< cilk::op_add<int> > Nexit;
+    cilk::reducer< cilk::op_add<int> > Ntlim;
     double Davg;
     vector< Body* > conformations;
     vector< Body* > ligands;

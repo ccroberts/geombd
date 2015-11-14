@@ -9,9 +9,9 @@ Session::Session(Model *m, SimulationConfig s) {
   model = m;
   type = s;
   Nreplicates = 0;
-  Nbind = 0;
-  Nexit = 0;
-  Ntlim = 0;
+  Nbind.set_value(0);
+  Nexit.set_value(0);
+  Ntlim.set_value(0);
   Davg = 0.;
 }
 
@@ -74,14 +74,23 @@ void SessionRadial::populateLigands() {
 }
 
 void SessionRadial::printRateConstant() {
-  int Ndone = Nbind + Nexit + Ntlim;
+  int Ndone = Nbind.get_value() + Nexit.get_value() + Ntlim.get_value();
   if(Ndone == 0) return;
 
-  double B = ((double)Nbind) / ((double)Ndone);
+  for(int bsi=0; bsi < bindingCriteria.size(); bsi++) {
+    double B = ((double)bindingCriteria[bsi]->Nbind.get_value()) / ((double)Ndone);
+    double kb = 4. * M_PI * b * Davg;
+    double k = (kb * B) / (1 - ((1 - B)*b/q));
+    k *= Na * 1e12 * 1e-27;
+    printf("   (session %d bs %d)   k_on = %.5e M⁻¹s⁻¹ (Nbind=%d Ndone=%d β=%.4f b=%.1f kd(b)=%.5e q=%.1f Davg=%.5e)", id, bsi, k, bindingCriteria[bsi]->Nbind.get_value(), Ndone, B, b, kb * Na * 1e12 * 1e-27, q, Davg);
+    cout << endl;
+  }
+
+  double B = ((double)Nbind.get_value()) / ((double)Ndone);
   double kb = 4. * M_PI * b * Davg;
   double k = (kb * B) / (1 - ((1 - B)*b/q));
   k *= Na * 1e12 * 1e-27;
-  printf("   (session %d)   k_on = %.5e M⁻¹s⁻¹ (Nbind=%d Ndone=%d β=%.4f b=%.1f kd(b)=%.5e q=%.1f Davg=%.5e)", id, k, Nbind, Ndone, B, b, kb * Na * 1e12 * 1e-27, q, Davg);
+  printf("   (session %d)   k_on = %.5e M⁻¹s⁻¹ (Nbind=%d Ndone=%d β=%.4f b=%.1f kd(b)=%.5e q=%.1f Davg=%.5e)", id, k, Nbind.get_value(), Ndone, B, b, kb * Na * 1e12 * 1e-27, q, Davg);
   cout << endl;
 }
 
@@ -125,10 +134,27 @@ void SessionAbsolutePeriodic::populateLigands() {
 }
 
 void SessionAbsolutePeriodic::printRateConstant() {
-  int Ndone = Nbind + Nexit + Ntlim;
+  int Ndone = Nbind.get_value() + Nexit.get_value() + Ntlim.get_value();
   if(Ndone == 0) return;
 
-  double B = ((double)Nbind) / ((double)Ndone);
+  for(int bsi=0; bsi < bindingCriteria.size(); bsi++) {
+    double B = ((double)bindingCriteria[bsi]->Nbind.get_value()) / ((double)Ndone);
+    double V = bounds.x * bounds.y * bounds.z * LperA3;
+    double C = (1. / Na) / V;
+    double tavg = 0.;
+
+    for(int i=0; i < ligands.size(); i++)
+      if(ligands[i]->bound)
+        tavg += ligands[i]->t;
+    tavg /= bindingCriteria[bsi]->Nbind.get_value();
+
+    double rate = B * C / (tavg * 1e-12);
+
+    printf("   (session %d bs %d)   rate = %.5e Ms⁻¹ (Nbind=%d Ndone=%d β=%.4f C=%.1f k=%.5e s⁻¹ tavg=%.5e Davg=%.5e)", id, bsi, rate, bindingCriteria[bsi]->Nbind.get_value(), Ndone, B, C, B / (tavg * 1e-12), tavg, Davg);
+    cout << endl;
+  }
+
+  double B = ((double)Nbind.get_value()) / ((double)Ndone);
   double V = bounds.x * bounds.y * bounds.z * LperA3;
   double C = (1. / Na) / V;
   double tavg = 0.;
@@ -136,11 +162,11 @@ void SessionAbsolutePeriodic::printRateConstant() {
   for(int i=0; i < ligands.size(); i++)
     if(ligands[i]->bound)
       tavg += ligands[i]->t;
-  tavg /= Nbind;
+  tavg /= Nbind.get_value();
 
   double rate = B * C / (tavg * 1e-12);
 
-  printf("   (session %d)   rate = %.5e Ms⁻¹ (Nbind=%d Ndone=%d β=%.4f C=%.1f k=%.5e s⁻¹ tavg=%.5e Davg=%.5e)", id, rate, Nbind, Ndone, B, C, B / (tavg * 1e-12), tavg, Davg);
+  printf("   (session %d)   rate = %.5e Ms⁻¹ (Nbind=%d Ndone=%d β=%.4f C=%.1f k=%.5e s⁻¹ tavg=%.5e Davg=%.5e)", id, rate, Nbind.get_value(), Ndone, B, C, B / (tavg * 1e-12), tavg, Davg);
   cout << endl;
 }
 
@@ -182,19 +208,34 @@ void SessionAbsoluteRadial::populateLigands() {
 }
 
 void SessionAbsoluteRadial::printRateConstant() {
-  int Ndone = Nbind + Nexit + Ntlim;
+  int Ndone = Nbind.get_value() + Nexit.get_value() + Ntlim.get_value();
   if(Ndone == 0) return;
 
-  double B = ((double)Nbind) / ((double)Ndone);
+  for(int bsi=0; bsi < bindingCriteria.size(); bsi++) {
+    double B = ((double)bindingCriteria[bsi]->Nbind.get_value()) / ((double)Ndone);
+    double tavg = 0.;
+
+    for(int i=0; i < ligands.size(); i++)
+      if(ligands[i]->bound)
+        tavg += ligands[i]->t;
+    tavg /= bindingCriteria[bsi]->Nbind.get_value();
+
+    double k = B / (tavg * 1e-12);
+
+    printf("   (session %d bs %d)   k_direct = %.5e s⁻¹ (Nbind=%d Ndone=%d βdirect=%.4f tavg=%.5e Davg=%.5e)", id, bsi, k, bindingCriteria[bsi]->Nbind.get_value(), Ndone, B, tavg, Davg);
+    cout << endl;
+  }
+
+  double B = ((double)Nbind.get_value()) / ((double)Ndone);
   double tavg = 0.;
 
   for(int i=0; i < ligands.size(); i++)
     if(ligands[i]->bound)
       tavg += ligands[i]->t;
-  tavg /= Nbind;
+  tavg /= Nbind.get_value();
 
   double k = B / (tavg * 1e-12);
 
-  printf("   (session %d)   k_direct = %.5e s⁻¹ (Nbind=%d Ndone=%d βdirect=%.4f tavg=%.5e Davg=%.5e)", id, k, Nbind, Ndone, B, tavg, Davg);
+  printf("   (session %d)   k_direct = %.5e s⁻¹ (Nbind=%d Ndone=%d βdirect=%.4f tavg=%.5e Davg=%.5e)", id, k, Nbind.get_value(), Ndone, B, tavg, Davg);
   cout << endl;
 }

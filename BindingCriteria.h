@@ -1,6 +1,6 @@
 #ifndef BindingCriteria_h_
 #define BindingCriteria_h_
-
+#include <cilk/reducer_opadd.h>
 
 struct BindingPair {
   double r2;
@@ -12,11 +12,12 @@ struct BindingPair {
 class BindingCriteria {
   public:
     vector<BindingPair> pairs;
-    int Nbind;
+    cilk::reducer< cilk::op_add<int> > Nbind;
+
 
   public:
     BindingCriteria() {
-      Nbind = 0;
+      Nbind.set_value(0);
     }
 
     ~BindingCriteria() {}
