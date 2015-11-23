@@ -19,6 +19,7 @@ class Session {
     cilk::reducer< cilk::op_add<int> > Nbind;
     cilk::reducer< cilk::op_add<int> > Nexit;
     cilk::reducer< cilk::op_add<int> > Ntlim;
+    cilk::reducer< cilk::op_add<double> > t_avgt;
     double Davg;
     vector< Body* > conformations;
     vector< Body* > ligands;
@@ -29,6 +30,7 @@ class Session {
     ~Session();
 
     virtual void populateLigands();
+    virtual void positionLigand(Body *body);
     virtual void printRateConstant();
 
 };
@@ -43,7 +45,7 @@ class SessionRadial : public Session {
   public:
     SessionRadial(Model *m);
 
-    virtual void populateLigands();
+    virtual void positionLigand(Body *body);
     virtual void printRateConstant();
 
 };
@@ -60,7 +62,7 @@ class SessionAbsolutePeriodic : public Session {
   public:
     SessionAbsolutePeriodic(Model *m);
 
-    virtual void populateLigands();
+    virtual void positionLigand(Body *body);
     virtual void printRateConstant();
 
 };
@@ -76,7 +78,7 @@ class SessionAbsoluteRadial : public Session {
   public:
     SessionAbsoluteRadial(Model *m);
 
-    virtual void populateLigands();
+    virtual void positionLigand(Body *body);
     virtual void printRateConstant();
 
 };

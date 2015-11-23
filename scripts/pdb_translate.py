@@ -22,4 +22,6 @@ for line in open(sys.argv[1]):
     z = '%8.3f' % (float(line[46:54]) + dz)
     newline = line[:30] + x + y +z + line[54:]
     print newline
+  else:
+    print line
 

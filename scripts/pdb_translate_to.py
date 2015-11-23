@@ -4,10 +4,13 @@
 
 import sys
 
-
-if len(sys.argv) < 2:
-  print 'Usage: pdbCenter.py PDBFILENAME'
+if len(sys.argv) < 5:
+  print 'Usage: pdbTranslate.py PDBFILENAME DX DY DZ'
   sys.exit()
+
+dx = float(sys.argv[2])
+dy = float(sys.argv[3])
+dz = float(sys.argv[4])
 
 n = 0.
 c = [0., 0., 0.]
@@ -23,11 +26,12 @@ for line in open(sys.argv[1]):
 for i in range(3):
   c[i] /= n
 
-dx = -c[0]
-dy = -c[1]
-dz = -c[2]
+dx -= c[0]
+dy -= c[1]
+dz -= c[2]
 
-print 'REMARK translating', dx, dy, dz
+
+print 'REMARK translating center to ', c
 
 for line in open(sys.argv[1]):
   line = line.strip()

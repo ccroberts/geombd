@@ -4,7 +4,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 #import numpy as np
-import sys
+import sys, math
 
 
 
@@ -34,39 +34,40 @@ for line in open(sys.argv[1], 'r'):
     y[sid].append([])
   if line.startswith("   (session") and sp[1][-1] == ')':
     sid = int(sp[1][:-1]) - 1
-    #kon = float(sp[4])
+    kon = float(sp[4])
     bnd = float(sp[6].split('=')[1])
     num = float(sp[7].split('=')[1])
     bta = bnd/num
     x[sid][0].append(num)
-    y[sid][0].append(bta)
+    y[sid][0].append(kon)
   if line.startswith("   (session") and sp[2] == 'bs':
     sid = int(sp[1]) - 1
     bsid = int(sp[3][:-1]) + 1
-    #kon = float(sp[6])
+    kon = float(sp[6])
     bnd = float(sp[8].split('=')[1])
     num = int(sp[9].split('=')[1])
     bta = bnd/num
     x[sid][bsid].append(num)
-    y[sid][bsid].append(bta)
+    y[sid][bsid].append(kon)
 
 for i in range(len(x)):
   for j in range(len(x[i])):
     if j == 0 and b_total:
-      label = 'Session %d Total' % (i+1)
-      plt.plot(x[i][j], y[i][j], label=label)
+      X = x[i][j]
+      Y = y[i][j]
+      label = 'Session %d Total - k = %.1e' % (i+1, sum(Y[-500:])/500.)
+      plt.plot(X, Y, label=label)
     if j > 0 and b_bs:
-      label = 'Session %d BS %d' % (i+1, j-1)
-      plt.plot(x[i][j], y[i][j], label=label)
+      X = x[i][j]
+      Y = y[i][j]
+      label = 'Session %d BS %d - k = %.1e' % (i+1, j-1, sum(Y[-500:])/500.)
+      plt.plot(X, Y, label=label)
 
 plt.legend(loc='upper right', prop={'size':12})
-plt.ylabel('Bound Fraction', fontsize=16)
+plt.ylabel('Rate Constant Variance', fontsize=16)
 plt.xlabel('Completed Substrate Replicate Simulations', fontsize=16)
 if yrange != None:
   plt.ylim(yrange)
-#plt.yticks(fontsize=14)
-#plt.xticks(fontsize=14)
-#plt.tight_layout();
 
 plt.title(sys.argv[1])
 #plt.show()

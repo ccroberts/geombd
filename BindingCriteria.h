@@ -13,11 +13,15 @@ class BindingCriteria {
   public:
     vector<BindingPair> pairs;
     cilk::reducer< cilk::op_add<int> > Nbind;
+    cilk::reducer< cilk::op_add<double> > t_avgt;
+    bool AND;
 
 
   public:
-    BindingCriteria() {
+    BindingCriteria(bool cAND=true) {
       Nbind.set_value(0);
+      t_avgt.set_value(0.);
+      AND = cAND;
     }
 
     ~BindingCriteria() {}
@@ -33,6 +37,11 @@ class BindingCriteria {
     }
 
     bool checkBinding(Body *ligand) {
+      if(AND) return checkBindingAND(ligand);
+      return checkBindingOR(ligand);
+    }
+
+    bool checkBindingAND(Body *ligand) {
       for(int i=0; i < pairs.size(); i++) {
         Bead *lb = ligand->beads[pairs[i].laid];
         vertex dr = { lb->R.x - pairs[i].target.x,
@@ -42,6 +51,18 @@ class BindingCriteria {
         if(l2 > pairs[i].r2) return false;
       }
       return true;
+    }
+
+    bool checkBindingOR(Body *ligand) {
+      for(int i=0; i < pairs.size(); i++) {
+        Bead *lb = ligand->beads[pairs[i].laid];
+        vertex dr = { lb->R.x - pairs[i].target.x,
+                      lb->R.y - pairs[i].target.y,
+                      lb->R.z - pairs[i].target.z };
+        double l2 = dr.x*dr.x + dr.y*dr.y + dr.z*dr.z;
+        if(l2 <= pairs[i].r2) return true;
+      }
+      return false;
     }
 
 

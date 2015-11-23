@@ -152,9 +152,27 @@ void Model::parseInputFile() {
           cout << " + Ligand starting position: " << _fx << ", " << _fy << ", " << _fz << endl;
         }
       }
-      if(token == "bindc") {
+      if(token == "bindand") {
         BindingCriteria *bc = new BindingCriteria();
-        cout << " + Binding criteria: " << endl;
+        cout << " + Binding criteria (AND): " << endl;
+        while(parseNextValue(&line, &token)) {
+          double bx = stringToDouble(token);
+          parseNextValue(&line, &token);
+          double by = stringToDouble(token);
+          parseNextValue(&line, &token);
+          double bz = stringToDouble(token);
+          parseNextValue(&line, &token);
+          int laid = stringToInt(token);
+          parseNextValue(&line, &token);
+          double r = stringToDouble(token);
+          bc->addPair(bx, by, bz, laid-1, r);
+          cout << "    - LAID: " << laid << " within " << r << "A of (" << bx << " " << by << " " << bz << ")" << endl;
+        }
+        sessions[sessions.size()-1]->bindingCriteria.push_back(bc);
+      }
+      if(token == "bindor") {
+        BindingCriteria *bc = new BindingCriteria(false);
+        cout << " + Binding criteria (OR): " << endl;
         while(parseNextValue(&line, &token)) {
           double bx = stringToDouble(token);
           parseNextValue(&line, &token);
@@ -285,7 +303,9 @@ void Model::parseLigandPDBQT(string lfn) {
 
   while(getline(fd, line)) {
     if(starts_with(&line, "ATOM") or starts_with(&line, "HETATM")) {
-      if(bi == NULL) bi = new Body(this, sessions[sessions.size()-1]);
+      if(bi == NULL) {
+        bi = new Body(this, sessions[sessions.size()-1]);
+      }
       bj = new Bead();
 
       char element = line[13];

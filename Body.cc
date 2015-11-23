@@ -21,18 +21,9 @@ Body::Body() {
 
 
  
-Body::Body(Model *m, Session *s) {
+Body::Body(Model *m, Session *s) : Body() {
   model = m;
   session = s;
-
-  t = 0.;
-  dt = 0.100;
-  done = false;
-  bound = false;
-
-  t_dwell = 0.;
-  t_dwell_max = 0.;
-  t_dwell_total = 0.;
 }
 
 
@@ -42,10 +33,7 @@ Body::~Body() {
 }
 
 
- 
 
-
- 
 void Body::define() {
   m = 0;
   I = 0;

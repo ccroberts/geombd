@@ -161,9 +161,14 @@ void Model::integrate() {
 
         // check for timed-out ligands
         if(Bi->t >= sap->t_max) {
-          cout << "#" << Bi->session->id << "\t Time-out event" << endl;
-          Bi->done = true;
+          //Bi->done = true;
           *Bi->session->Ntlim += 1;
+          Bi->session->positionLigand(Bi);
+          cout << "#" << Bi->session->id << "\t Time-out event  (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
+          Bi->t = 0.;
+          Bi->t_dwell = 0.;
+          Bi->t_dwell_max = 0.;
+          Bi->t_dwell_total = 0.;
         }
       }
 
@@ -171,11 +176,18 @@ void Model::integrate() {
       for(int bs=0; bs < Bi->session->bindingCriteria.size(); bs++) {
         BindingCriteria* bc = Bi->session->bindingCriteria[bs];
         if(bc->checkBinding(Bi)) {
-          cout << "#" << Bi->session->id << "\t Binding event at t=" << Bi->t << " ps" << endl;
-          Bi->bound = true;
-          Bi->done = true;
+          //Bi->bound = true;
+          //Bi->done = true;
           *Bi->session->Nbind += 1;
+          *Bi->session->t_avgt += Bi->t;
           *bc->Nbind += 1;
+          *bc->t_avgt += Bi->t;
+          Bi->session->positionLigand(Bi);
+          cout << "#" << Bi->session->id << "\t Binding event at t=" << Bi->t << " ps  (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
+          Bi->t = 0.;
+          Bi->t_dwell = 0.;
+          Bi->t_dwell_max = 0.;
+          Bi->t_dwell_total = 0.;
         }
       }
 
@@ -189,17 +201,27 @@ void Model::integrate() {
         if(Bi->session->type == CONFIGURATION_RADIAL) {
           SessionRadial *sr = (SessionRadial*)Bi->session;
           if(l2 >= sr->q2) {
-            Bi->done = true;
+            //Bi->done = true;
             *sr->Nexit += 1;
-            cout << "#" << Bi->session->id << "\t Escape event at t=" << Bi->t << " ps" << endl;
+            Bi->session->positionLigand(Bi);
+            cout << "#" << Bi->session->id << "\t Escape event at t=" << Bi->t << " ps  (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
+            Bi->t = 0.;
+            Bi->t_dwell = 0.;
+            Bi->t_dwell_max = 0.;
+            Bi->t_dwell_total = 0.;
           }
         }
         if(Bi->session->type == CONFIGURATION_ABSOLUTE_RADIAL) {
           SessionAbsoluteRadial *sar = (SessionAbsoluteRadial*)Bi->session;
           if(l2 >= sar->q2) {
-            Bi->done = true;
+            //Bi->done = true;
             *sar->Nexit += 1;
-            cout << "#" << Bi->session->id << "\t Escape event at t=" << Bi->t << " ps" << endl;
+            Bi->session->positionLigand(Bi);
+            cout << "#" << Bi->session->id << "\t Escape event at t=" << Bi->t << " ps  (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
+            Bi->t = 0.;
+            Bi->t_dwell = 0.;
+            Bi->t_dwell_max = 0.;
+            Bi->t_dwell_total = 0.;
           }
         }
       }

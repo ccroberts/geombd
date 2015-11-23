@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.6
 
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 #import numpy as np
 import sys
@@ -34,21 +34,17 @@ for line in open(sys.argv[1], 'r'):
     y[sid].append([])
   if line.startswith("   (session") and sp[1][-1] == ')':
     sid = int(sp[1][:-1]) - 1
-    #kon = float(sp[4])
-    bnd = float(sp[6].split('=')[1])
+    kon = float('%.2g' % float(sp[4]))
     num = float(sp[7].split('=')[1])
-    bta = bnd/num
     x[sid][0].append(num)
-    y[sid][0].append(bta)
+    y[sid][0].append(kon)
   if line.startswith("   (session") and sp[2] == 'bs':
     sid = int(sp[1]) - 1
     bsid = int(sp[3][:-1]) + 1
-    #kon = float(sp[6])
-    bnd = float(sp[8].split('=')[1])
+    kon = float('%.2g' % float(sp[6]))
     num = int(sp[9].split('=')[1])
-    bta = bnd/num
     x[sid][bsid].append(num)
-    y[sid][bsid].append(bta)
+    y[sid][bsid].append(kon)
 
 for i in range(len(x)):
   for j in range(len(x[i])):
@@ -60,7 +56,7 @@ for i in range(len(x)):
       plt.plot(x[i][j], y[i][j], label=label)
 
 plt.legend(loc='upper right', prop={'size':12})
-plt.ylabel('Bound Fraction', fontsize=16)
+plt.ylabel('Rate Constant', fontsize=16)
 plt.xlabel('Completed Substrate Replicate Simulations', fontsize=16)
 if yrange != None:
   plt.ylim(yrange)
@@ -69,6 +65,6 @@ if yrange != None:
 #plt.tight_layout();
 
 plt.title(sys.argv[1])
-#plt.show()
-fig = matplotlib.pyplot.gcf()
-fig.savefig(sys.argv[2], dpi=300)
+plt.show()
+#fig = matplotlib.pyplot.gcf()
+#fig.savefig(sys.argv[2], dpi=300)
