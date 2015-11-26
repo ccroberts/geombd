@@ -24,12 +24,12 @@ bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
 
 
 void usage() {
-  printf("Usage: gridder -d [AD4.1.DAT] -n NTHREADS(=max) -r [Receptor.PDBQT] -l [Ligand.PDBQT] (Optional: -p GRID_PADDING(=40A) -s GRID_SPACING(=0.375A))\n");
+  printf("Usage: gridder -d [AD4.1.DAT] -n NTHREADS(=max) -r [Receptor.PDBQT] -l [Ligand.PDBQT] (Optional: -p GRID_PADDING(=40A) -s GRID_SPACING(=0.375A) -w OutputFilenamePrefix)\n");
 }
 
 
 int main(int argc, char **argv) {
-  string datfn, ligfn, recfn, fldfn, stoken, token;
+  string datfn, ligfn, recfn, fldfn, stoken, token, name_prefix;
   double T = 298.;
   double diel_rec = 78.5;
   double grid_resolution = 0.375;
@@ -53,6 +53,10 @@ int main(int argc, char **argv) {
   // grid spacing
   if(getInputWithFlag(argc, argv, 's', &stoken)) {
     grid_resolution = stringToDouble(stoken);
+  }
+  // grid padding
+  if(getInputWithFlag(argc, argv, 'w', &name_prefix)) {
+    cout << "> Output filename prefix: " << name_prefix << endl;
   }
 
   // Load AD parameters
@@ -136,7 +140,8 @@ int main(int argc, char **argv) {
     if(!new_data_t) { cout << "! Error: Could not allocate memory for grid calculation." << endl; return EXIT_FAILURE; }
     data_t.push_back(new_data_t);
     type_t.push_back(adp->index_for_type(*it));
-    typefn = *it;
+    typefn = name_prefix;
+    typefn.append(*it);
     typefn.append(".bpm");
     bpm_t.push_back(new ofstream(typefn, ios::out | ios::binary));
     // write header

@@ -10,18 +10,12 @@ import sys, math
 
 b_total = True
 b_bs = True
-b_stotal = False
-r_stotal = []
 yrange = None
 for arg in sys.argv:
   if arg == '-nototal':
     b_total = False
   elif arg == '-total':
     b_bs = False
-  elif arg.startswith('-c'):
-    b_stotal = True
-    r_stotal = [int(x) for x in arg[2:].split(',')]
-    r_stotal.insert(0, 0)
   elif arg.startswith('-y'):
     yrange = [float(x) for x in arg[2:].split(',')]
 
@@ -46,7 +40,10 @@ for line in open(sys.argv[1], 'r'):
     num = float(sp[7].split('=')[1])
     #bta = bnd/num
     x[sid][0].append(num)
-    y[sid][0].append(bnd/num)
+    if bnd == 0:
+      y[sid][0].append(100.)
+    else:
+      y[sid][0].append(pow(bnd, -0.5) * 100.)
   if line.startswith("   (session") and sp[2] == 'bs':
     sid = int(sp[1]) - 1
     bsid = int(sp[3][:-1]) + 1
@@ -55,11 +52,16 @@ for line in open(sys.argv[1], 'r'):
     num = int(sp[9].split('=')[1])
     #bta = bnd/num
     x[sid][bsid].append(num)
-    y[sid][bsid].append(bnd/num)
+    #y[sid][bsid].append(pow(bnd, -0.5) * 100.)
+    if bnd == 0:
+      y[sid][bsid].append(100.)
+    else:
+      y[sid][bsid].append(pow(bnd, -0.5) * 100.)
 
-def running_variance(x, y, w):
+def running_variance(x, y):
   X = []
   Y = []
+  w = 100
   for i in range(0, len(y)-w):
     yi = y[i:(i+w)]
     m = sum(yi)/len(yi)
@@ -68,34 +70,16 @@ def running_variance(x, y, w):
     Y.append(v)
   return X, Y
 
-
-window = 200
-if b_stotal:
-  for ci in range(len(r_stotal) - 1):
-    newy = []
-    for i in range(len(x[0][0])):
-      newyi = 0.
-      for j in range(r_stotal[ci], r_stotal[ci+1]):
-        newyi += y[0][j+1][i]
-      newy.append(newyi)
-    if len(newy) < window:
-      continue
-    XX, YY = running_variance(x[0][0], newy, window)
-    label = 'Combined Session %d Total - c = %.1e' % (ci+1, sum(YY[-window:])/len(YY[-window:]))
-    plt.plot(XX, YY, label=label)
-else:
-  for i in range(len(x)):
-    for j in range(len(x[i])):
-      if len(y[i][j]) < window:
-        continue
-      if j == 0 and b_total:
-        X, Y = running_variance(x[i][j], y[i][j], window)
-        label = 'Session %d Total - c = %.1e' % (i+1, sum(Y[-window:])/len(Y[-window:]))
-        plt.plot(X, Y, label=label)
-      if j > 0 and b_bs:
-        X, Y = running_variance(x[i][j], y[i][j], window)
-        label = 'Session %d BS %d - c = %.1e' % (i+1, j-1, sum(Y[-window:])/len(Y[-window:]))
-        plt.plot(X, Y, label=label)
+for i in range(len(x)):
+  for j in range(len(x[i])):
+    if j == 0 and b_total:
+      X, Y = running_variance(x[i][j], y[i][j])
+      label = 'Session %d Total - c = %.1e' % (i+1, sum(Y[-500:])/len(Y[-500:]))
+      plt.plot(X, Y, label=label)
+    if j > 0 and b_bs:
+      X, Y = running_variance(x[i][j], y[i][j])
+      label = 'Session %d BS %d - c = %.1e' % (i+1, j-1, sum(Y[-500:])/len(Y[-500:]))
+      plt.plot(X, Y, label=label)
 
 plt.legend(loc='upper right', prop={'size':12})
 plt.ylabel('Bound Fraction Variance', fontsize=16)
