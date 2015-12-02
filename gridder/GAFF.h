@@ -171,6 +171,7 @@ class ReceptorPDBQT {
     vector<int> types;
     set<string> types_set;
     vector<double> charges;
+    vector<double> radii;
 
   public:
     ReceptorPDBQT(string filename, GAFFParameters *adp) {
@@ -224,6 +225,13 @@ class ReceptorPDBQT {
           // charge
           double q = stringToDouble(line.substr(68, 8));
           charges.push_back(q);
+          // radius
+          int ati = adp->index_for_type(tt);
+          double radius = 1.4;
+          if(ati >= 0) {
+            radius = adp->Rii[ati] / 2.;
+          }
+          radii.push_back(radius);
         }
       }
 

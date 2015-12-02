@@ -76,7 +76,7 @@ bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
 
 
 void usage() {
-  printf("Usage: gridder -n NTHREADS(=max) -r [Receptor.PQR] (Optional: -p GRID_PADDING(=40A) -s GRID_SPACING(=0.375A))\n");
+  printf("Usage: gridder -n NTHREADS(=max) -r [Receptor.PQR] (Optional: -p GRID_PADDING(=40A) -s GRID_SPACING(=0.375A) -m RECEPTOR_RADIUS_SCALING(=1.25) -w OutputFilenamePrefix))\n");
 }
 
 
@@ -89,9 +89,10 @@ bool coordinateToGrid(double x, double y, double z, int *Gx, int *Gy, int *Gz, v
 
 
 int main(int argc, char **argv) {
-  string datfn, ligfn, recfn, fldfn, stoken, token;
+  string datfn, ligfn, recfn, fldfn, stoken, token, name_prefix;
   double grid_resolution = 0.375;
   double padding = 40., padding_sqr;
+  double scaling = 1.25;
 
   // receptor pqr
   if(!getInputWithFlag(argc, argv, 'r', &recfn)) { usage(); return -1; }
@@ -107,6 +108,14 @@ int main(int argc, char **argv) {
   // grid spacing
   if(getInputWithFlag(argc, argv, 's', &stoken)) {
     grid_resolution = stringToDouble(stoken);
+  }
+  // receptor radius scaling
+  if(getInputWithFlag(argc, argv, 'm', &stoken)) {
+    scaling = stringToDouble(stoken);
+  }
+  // filename prefix
+  if(getInputWithFlag(argc, argv, 'w', &name_prefix)) {
+    cout << "> Output filename prefix: " << name_prefix << endl;
   }
 
   // Load receptor file
@@ -134,7 +143,9 @@ int main(int argc, char **argv) {
   }
 
   cout << "Opening file for writing." << endl;
-  ofstream fo("x.spm");
+  string ofn = name_prefix;
+  ofn.append("x.spm");
+  ofstream fo(ofn);
 
   // Start a timer and start our calculations
   Timer *timer = new Timer();
@@ -156,7 +167,7 @@ int main(int argc, char **argv) {
             double dx = (origin.x + (gx * grid_resolution)) - Rrec.x;
             double dy = (origin.y + (gy * grid_resolution)) - Rrec.y;
             double dz = (origin.z + (gz * grid_resolution)) - Rrec.z;
-            if(sqrt(dx*dx + dy*dy + dz*dz) <= radius + 1.4) data[gx][gy][gz] = 1;
+            if(sqrt(dx*dx + dy*dy + dz*dz) <= radius * scaling) data[gx][gy][gz] = 1;
           }
         }
       }

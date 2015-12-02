@@ -23,6 +23,14 @@ bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
 }
 
 
+bool coordinateToGrid(double x, double y, double z, int *Gx, int *Gy, int *Gz, vertex *origin, double delta) {
+  *Gx = (int)floor(((x-origin->x)/delta) + 0.5);
+  *Gy = (int)floor(((y-origin->y)/delta) + 0.5);
+  *Gz = (int)floor(((z-origin->z)/delta) + 0.5);
+  return true;
+}
+
+
 void usage() {
   printf("Usage: gridder -d [AD4.1.DAT] -n NTHREADS(=max) -r [Receptor.PDBQT] -l [Ligand.PDBQT] (Optional: -p GRID_PADDING(=40A) -s GRID_SPACING(=0.375A) -w OutputFilenamePrefix)\n");
 }
@@ -110,25 +118,15 @@ int main(int argc, char **argv) {
   //// Data for all grids
   // Single point calculation storage
   vector<double> u_t(lig->types_set.size());
-  // Z vector storage for E and D calcs
-  /*
-  double *data_e = (double*)calloc(Npoints[2], sizeof(double));
-  double *data_d = (double*)calloc(Npoints[2], sizeof(double));
-  if(!data_e) { cout << "! Error: Could not allocate memory for grid calculation." << endl; return EXIT_FAILURE; }
-  if(!data_d) { cout << "! Error: Could not allocate memory for grid calculation." << endl; return EXIT_FAILURE; }
-  ofstream bpm_e("e.bpm", ios::out | ios::binary);
-  ofstream bpm_d("d.bpm", ios::out | ios::binary);
-  */
-  // write header
-  /*
-  bpm_e.write((char*)&origin, sizeof(vertex));
-  bpm_e.write((char*)&Npoints, sizeof(int)*3);
-  bpm_e.write((char*)&grid_resolution, sizeof(double));
-  bpm_d.write((char*)&origin, sizeof(vertex));
-  bpm_d.write((char*)&Npoints, sizeof(int)*3);
-  bpm_d.write((char*)&grid_resolution, sizeof(double));
-  */
-
+  // Exclusion grid
+  cout << "Allocating data" << endl;
+  bool ***ex = (bool***)calloc(Npoints[0], sizeof(bool**));
+  for(int i=0; i < Npoints[0]; i++) {
+    ex[i] = (bool**)calloc(Npoints[1], sizeof(bool*));
+    for(int j=0; j < Npoints[1]; j++) {
+      ex[i][j] = (bool*)calloc(Npoints[2], sizeof(bool));
+    }
+  }
 
   // Dynamic storage for VDW/HB calcs
   vector<double*> data_t;
@@ -150,12 +148,33 @@ int main(int argc, char **argv) {
     bpm_t[bpm_t.size()-1]->write((char*)&grid_resolution, sizeof(double));
   }
 
-  // Electrostatic grid parameters
-  //double ions = (/*1+*/1. * (ions_mono[0] * 6.022e23 / 1e27))
-  //            + (/*1-*/1. * (ions_mono[1] * 6.022e23 / 1e27))
-  //            + (/*2+*/4. * (ions_di[0] * 6.022e23 / 1e27))
-  //            + (/*2-*/4. * (ions_di[1] * 6.022e23 / 1e27));
-  //double kappa = sqrt((4. * M_PI * kC * ions) / (diel_rec * kB * T));
+  // Exclusion grid
+  cout << "> Creating exclusion grid...";
+  cout.flush();
+  for(int i=0; i < rec->coordinates.size(); i++) {
+    vertex Rrec = rec->coordinates[i];
+    double radius = rec->radii[i];
+    int Grec[3];
+    if(coordinateToGrid(Rrec.x, Rrec.y, Rrec.z, &Grec[0], &Grec[1], &Grec[2], &origin, grid_resolution)) {
+      int searchr = ((padding + radius) / grid_resolution) + 1;
+      for(int gx=(Grec[0]-searchr); gx <= Grec[0]+searchr; gx++) {
+        if(gx < 0 or gx >= Npoints[0]) continue;
+        for(int gy=(Grec[1]-searchr); gy <= Grec[1]+searchr; gy++) {
+          if(gy < 0 or gy >= Npoints[1]) continue;
+          for(int gz=(Grec[2]-searchr); gz <= Grec[2]+searchr; gz++) {
+            if(gz < 0 or gz >= Npoints[2]) continue;
+
+            double dx = (origin.x + (gx * grid_resolution)) - Rrec.x;
+            double dy = (origin.y + (gy * grid_resolution)) - Rrec.y;
+            double dz = (origin.z + (gz * grid_resolution)) - Rrec.z;
+            if(sqrt(dx*dx + dy*dy + dz*dz) <= radius + padding) ex[gx][gy][gz] = true;
+          }
+        }
+      }
+    }
+  }
+  cout << " done." << endl;
+  cout << "> Starting grid calculation." << endl;
 
   // Start a timer and start our calculations
   Timer *timer = new Timer();
@@ -167,8 +186,8 @@ int main(int argc, char **argv) {
       cilk_for(int nz=0; nz < Npoints[2]; nz++) {
         double Z = (nz * grid_resolution) + origin.z;
 
-        //data_e[nz] = 0;
-        //data_d[nz] = 0;
+        if(ex[nx][ny][nz] == false) continue;
+
         for(int at=0; at < type_t.size(); at++)
           data_t[at][nz] = 0;
 
@@ -181,12 +200,6 @@ int main(int argc, char **argv) {
           double dist_sqr = dr.x*dr.x + dr.y*dr.y + dr.z*dr.z;
           if(dist_sqr > padding_sqr) continue;
           double dist = sqrt(dist_sqr);
-          // Electrostatic
-          //double du_e = kC * rec->charges[i] * exp(-dist * kappa) / (diel_rec * dist);
-          //data_e[nz] += du_e;
-          // Desolvation
-          //double du_d = 0.01097 * adp->vol[rec->types[i]] * exp(-dist_sqr / 24.5); /*Note: 24.5 = 2 * GaussianDistantConstant^2 = 2. * 3.5 * 3.5*/
-          //data_d[nz] += du_d;
           // Iterate of each ligand atom type and calc VDW/HB
           int rec_type = rec->types[i];
           double dist_6 = dist_sqr * dist_sqr * dist_sqr;

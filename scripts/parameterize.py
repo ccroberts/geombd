@@ -15,12 +15,23 @@ for line in open(fffn, 'r'):
     ff[sp[0]] = {}
     ff[sp[0]][sp[1]] = [float(sp[2]), sp[3]]
 
+def synonym(at):
+  if at == 'H5\'': return 'H5\'1'
+  elif at == 'H5\'\'': return 'H5\'2'
+  elif at == 'H2\'': return 'H2\'1'
+  elif at == 'H2\'\'': return 'H2\'2'
+  elif at == 'HO5\'': return 'HO5\'1'
+  elif at == 'HO5\'\'': return 'HO5\'2'
+  elif at == 'HO2\'': return 'HO2\'1'
+  elif at == 'HO2\'\'': return 'HO2\'2'
+  return at
 
 
 def process_receptor(ff, resname, resid, resdata):
   if resname in ff.keys():
     for line in resdata:
       at = line[12:16].strip()
+      at = synonym(at)
       try:
         param = ff[resname][at]
         print '%s  1.00  0.00   %7.3f %s' % (line[:54], param[0], param[1])

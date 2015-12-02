@@ -79,7 +79,7 @@ if b_stotal:
         newyi += y[0][j+1][i]
       newy.append(newyi)
     if len(newy) < window:
-      continue
+      window = len(newy)
     XX, YY = running_variance(x[0][0], newy, window)
     label = 'Combined Session %d Total - c = %.1e' % (ci+1, sum(YY[-window:])/len(YY[-window:]))
     plt.plot(XX, YY, label=label)
@@ -87,7 +87,7 @@ else:
   for i in range(len(x)):
     for j in range(len(x[i])):
       if len(y[i][j]) < window:
-        continue
+        window = len(y[i][j]) - 1
       if j == 0 and b_total:
         X, Y = running_variance(x[i][j], y[i][j], window)
         label = 'Session %d Total - c = %.1e' % (i+1, sum(Y[-window:])/len(Y[-window:]))

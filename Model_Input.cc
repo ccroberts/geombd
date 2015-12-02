@@ -69,7 +69,7 @@ void Model::parseInputFile() {
       }
       if(token == "ex") {
         parseNextValue(&line, &token);
-        cout << "* Loading exclusion map...";
+        cout << "* Loading exclusion map \"" << token << "\"...";
         cout.flush();
         Timer *t = new Timer();
         t->start();

@@ -31,9 +31,6 @@ class ExclusionMap {
       fd.read((char*)&delta, sizeof(double));
       Nt = N[0] * N[1] * N[2];
 
-      cout << endl << "> x " << N[0] << " " << N[1] << " " << N[2] << endl;
-      cout << "Delta " << delta << endl;
-
       data = (short***)calloc(N[0], sizeof(short**));
       for(int nx=0; nx < N[0]; nx++) {
         data[nx] = (short**)calloc(N[1], sizeof(short*));              
