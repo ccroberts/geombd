@@ -25,8 +25,6 @@ for arg in sys.argv:
   elif arg.startswith('-y'):
     yrange = [float(x) for x in arg[2:].split(',')]
 
-print sys.argv[1]
-
 sid = -1
 x = []
 y = []

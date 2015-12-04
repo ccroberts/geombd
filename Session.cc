@@ -88,7 +88,7 @@ void SessionRadial::printRateConstant() {
     double kb = 4. * M_PI * b * Davg;
     double k = (kb * B) / (1 - ((1 - B)*b/q));
     k *= Na * 1e12 * 1e-27;
-    printf("   (session %d bs %d)   k_on = %.5e M⁻¹s⁻¹ (Nbind=%d Ndone=%d β=%.4f b=%.1f kd(b)=%.5e q=%.1f Davg=%.5e)", id, bsi, k, bindingCriteria[bsi]->Nbind.get_value(), Ndone, B, b, kb * Na * 1e12 * 1e-27, q, Davg);
+    printf("   (session %d bs %d)   k_on = %.5e M⁻¹s⁻¹ ± %.1f%% (Nbind=%d Ndone=%d β=%.4f b=%.1f kd(b)=%.5e q=%.1f Davg=%.5e)", id, bsi, k, pow(Nbind.get_value(), -0.5), bindingCriteria[bsi]->Nbind.get_value(), Ndone, B, b, kb * Na * 1e12 * 1e-27, q, Davg);
     cout << endl;
   }
 
@@ -96,7 +96,7 @@ void SessionRadial::printRateConstant() {
   double kb = 4. * M_PI * b * Davg;
   double k = (kb * B) / (1 - ((1 - B)*b/q));
   k *= Na * 1e12 * 1e-27;
-  printf("   (session %d)   k_on = %.5e M⁻¹s⁻¹ (Nbind=%d Ndone=%d β=%.4f b=%.1f kd(b)=%.5e q=%.1f Davg=%.5e)", id, k, Nbind.get_value(), Ndone, B, b, kb * Na * 1e12 * 1e-27, q, Davg);
+  printf("   (session %d)   k_on = %.5e M⁻¹s⁻¹ ± %.1f%% (Nbind=%d Ndone=%d β=%.4f b=%.1f kd(b)=%.5e q=%.1f Davg=%.5e)", id, k, pow(Nbind.get_value(), -0.5), Nbind.get_value(), Ndone, B, b, kb * Na * 1e12 * 1e-27, q, Davg);
   cout << endl;
 }
 
@@ -162,7 +162,7 @@ void SessionAbsoluteRadial::printRateConstant() {
     double tavg = bindingCriteria[bsi]->t_avgt.get_value() / bindingCriteria[bsi]->Nbind.get_value();
     double k = B / (tavg * 1e-12);
 
-    printf("   (session %d bs %d)   k_direct = %.5e s⁻¹ (Nbind=%d Ndone=%d βdirect=%.4f tavg=%.5e Davg=%.5e)", id, bsi, k, bindingCriteria[bsi]->Nbind.get_value(), Ndone, B, tavg, Davg);
+    printf("   (session %d bs %d)   k_direct = %.5e s⁻¹ ± %.1f%% (Nbind=%d Ndone=%d βdirect=%.4f tavg=%.5e Davg=%.5e)", id, bsi, k, pow(Nbind.get_value(), -0.5), bindingCriteria[bsi]->Nbind.get_value(), Ndone, B, tavg, Davg);
     cout << endl;
   }
 
@@ -170,7 +170,7 @@ void SessionAbsoluteRadial::printRateConstant() {
   double tavg = t_avgt.get_value() / Nbind.get_value();
   double k = B / (tavg * 1e-12);
 
-  printf("   (session %d)   k_direct = %.5e s⁻¹ (Nbind=%d Ndone=%d βdirect=%.4f tavg=%.5e Davg=%.5e)", id, k, Nbind.get_value(), Ndone, B, tavg, Davg);
+  printf("   (session %d)   k_direct = %.5e s⁻¹ ± %.1f%% (Nbind=%d Ndone=%d βdirect=%.4f tavg=%.5e Davg=%.5e)", id, k, pow(Nbind.get_value(), -0.5), Nbind.get_value(), Ndone, B, tavg, Davg);
   cout << endl;
 }
 
