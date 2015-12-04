@@ -97,11 +97,11 @@ else:
         label = 'Session %d BS %d - c = %.1e' % (i+1, j-1, sum(Y[-window:])/len(Y[-window:]))
         plt.plot(X, Y, label=label)
 
+if yrange != None:
+  plt.ylim(yrange)
 plt.legend(loc='upper right', prop={'size':12})
 plt.ylabel('Bound Fraction Variance', fontsize=16)
 plt.xlabel('Completed Substrate Replicate Simulations', fontsize=16)
-if yrange != None:
-  plt.ylim(yrange)
 
 plt.title(sys.argv[1])
 #plt.show()

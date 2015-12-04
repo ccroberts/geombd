@@ -70,7 +70,6 @@ if b_stotal:
       newy.append(newyi)
     label = 'Combined Session %d Total - k = %.1e' % (ci+1, sum(newy[-window:])/len(newy[-window:]))
     plt.plot(x[0][0], newy, label=label)
-    print(x[0][0], newy)
 else:
   for i in range(len(x)):
     for j in range(len(x[i])):
@@ -86,7 +85,7 @@ else:
         plt.plot(X, Y, label=label)
 
 plt.legend(loc='upper right', prop={'size':12})
-plt.ylabel('Rate Constant Variance', fontsize=16)
+plt.ylabel('Rate Constant', fontsize=16)
 plt.xlabel('Completed Substrate Replicate Simulations', fontsize=16)
 if yrange != None:
   plt.ylim(yrange)

@@ -114,6 +114,7 @@ int main(int argc, char **argv) {
   vertex origin = { rec->min.x - padding, rec->min.y - padding, rec->min.z - padding };
   vertex dimensions = { (rec->max.x + padding) - origin.x, (rec->max.y + padding) - origin.y, (rec->max.z + padding) - origin.z };
   int Npoints[3] = { dimensions.x / grid_resolution, dimensions.y / grid_resolution, dimensions.z / grid_resolution };
+  int Ntotal = Npoints[0] * Npoints[1] * Npoints[2];
 
   //// Data for all grids
   // Single point calculation storage
@@ -149,9 +150,11 @@ int main(int argc, char **argv) {
   }
 
   // Exclusion grid
+  Timer *timer = new Timer();
+  timer->start();
   cout << "> Creating exclusion grid...";
   cout.flush();
-  for(int i=0; i < rec->coordinates.size(); i++) {
+  cilk_for(int i=0; i < rec->coordinates.size(); i++) {
     vertex Rrec = rec->coordinates[i];
     double radius = rec->radii[i];
     int Grec[3];
@@ -173,11 +176,12 @@ int main(int argc, char **argv) {
       }
     }
   }
-  cout << " done." << endl;
+  timer->stop();
+  cout << "> Elapsed time (s): ";
+  timer->print(&cout);
   cout << "> Starting grid calculation." << endl;
 
   // Start a timer and start our calculations
-  Timer *timer = new Timer();
   timer->start();
   for(int nx=0, nt=0; nx < Npoints[0]; nx++) {
     double X = (nx * grid_resolution) + origin.x;
@@ -220,15 +224,15 @@ int main(int argc, char **argv) {
       for(int at=0; at < type_t.size(); at++) {
         bpm_t[at]->write((char*)data_t[at], sizeof(double) * Npoints[2]);
       }
+      double percent_complete = ( (((double)nx+1) * Npoints[1] * Npoints[2]) + (((double)ny+1) * Npoints[2]) ) / (double)Ntotal;
+      cout << "\r> " << (100.*percent_complete) << " percent complete.\t\t\t" << flush;
     }
 
-    timer->stop();
-    double percent_complete = (((double)nx+1) / (double)Npoints[0]);
-    cout << "\r> " << (100.*percent_complete) << " percent complete.\t\t\t" << flush;
   }
+  timer->stop();
+  cout << "> Elapsed time (s): ";
+  timer->print(&cout);
 
-  //bpm_e.close();
-  //bpm_d.close();
   for(int at=0; at < type_t.size(); at++)
     bpm_t[at]->close();
 
