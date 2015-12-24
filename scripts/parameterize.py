@@ -59,7 +59,7 @@ def process_receptor(ff, resname, resid, resdata):
       q = float(sp[-1])
       Q.append(q)
     for i,line in enumerate(resdata):
-      at = line[13:16].strip()
+      at = line[12:16].strip()
       # todo... better atom type parsing
       print '%s  1.00  0.00   %7.3f %s' % (line[:54], Q[i], at[0])
 

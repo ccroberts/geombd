@@ -2846,6 +2846,8 @@ HEM HBD2 0.09 H
 HEM CGD 0.62 C
 HEM O1D -0.76 O
 HEM O2D -0.76 O
+Na  Na   1.00 Na
+Na+ Na+  1.00 Na
 CA  CA   2.00 Ca
 CAL CAL  2.00 Ca
 FE  FE   2.00 Fe

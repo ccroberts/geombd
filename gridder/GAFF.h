@@ -226,10 +226,13 @@ class ReceptorPDBQT {
           double q = stringToDouble(line.substr(68, 8));
           charges.push_back(q);
           // radius
-          int ati = adp->index_for_type(tt);
+          int ati = -1;
           double radius = 1.4;
-          if(ati >= 0) {
-            radius = adp->Rii[ati] / 2.;
+          if(adp) {
+            ati = adp->index_for_type(tt);
+            if(ati >= 0) {
+              radius = adp->Rii[ati] / 2.;
+            }
           }
           radii.push_back(radius);
         }

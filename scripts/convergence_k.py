@@ -27,17 +27,21 @@ for arg in sys.argv:
 
 
 sid = -1
+bnd = 0
 x = []
 y = []
+b = []
 for line in open(sys.argv[1], 'r'):
   sp = line.split()
   if line.startswith('* Defining session'):
     x.append([ [] ])
     y.append([ [] ])
+    b.append([ [] ])
     sid += 1
   if line.startswith(' + Binding criteria'):
     x[sid].append([])
     y[sid].append([])
+    b[sid].append([])
   if line.startswith("   (session") and sp[1][-1] == ')':
     sid = int(sp[1][:-1]) - 1
     kon = float(sp[4])
@@ -46,6 +50,7 @@ for line in open(sys.argv[1], 'r'):
     bta = bnd/num
     x[sid][0].append(num)
     y[sid][0].append(kon)
+    b[sid][0].append(bnd)
   if line.startswith("   (session") and sp[2] == 'bs':
     sid = int(sp[1]) - 1
     bsid = int(sp[3][:-1]) + 1
@@ -55,8 +60,9 @@ for line in open(sys.argv[1], 'r'):
     bta = bnd/num
     x[sid][bsid].append(num)
     y[sid][bsid].append(kon)
+    b[sid][bsid].append(bnd)
 
-window = 500
+window = 100
 if b_stotal:
   for ci in range(len(r_stotal) - 1):
     newy = []
@@ -68,7 +74,7 @@ if b_stotal:
         inewyi += 1
       #newyi /= inewyi
       newy.append(newyi)
-    label = 'Combined Session %d Total - k = %.1e' % (ci+1, sum(newy[-window:])/len(newy[-window:]))
+    label = 'Combined Session %d Total - k = %.1e +/- %.1f%%' % (ci+1, sum(newy[-window:])/len(newy[-window:]), pow(b[0][-1], -0.5) * 100.)
     plt.plot(x[0][0], newy, label=label)
 else:
   for i in range(len(x)):
@@ -76,12 +82,12 @@ else:
       if j == 0 and b_total:
         X = x[i][j]
         Y = y[i][j]
-        label = 'Session %d Total - k = %.1e' % (i+1, sum(Y[-window:])/len(Y[-window:]))
+        label = 'Session %d Total - k = %.1e +/- %.1f%%' % (i+1, sum(Y[-window:])/len(Y[-window:]), pow(b[i][j][-1], -0.5)*100.)
         plt.plot(X, Y, label=label)
       if j > 0 and b_bs:
         X = x[i][j]
         Y = y[i][j]
-        label = 'Session %d BS %d - k = %.1e' % (i+1, j-1, sum(Y[-window:])/len(Y[-window:]))
+        label = 'Session %d BS %d - k = %.1e +/- %.1f%%' % (i+1, j-1, sum(Y[-window:])/len(Y[-window:]), pow(b[i][j][-1], -0.5)*100.)
         plt.plot(X, Y, label=label)
 
 plt.legend(loc='upper right', prop={'size':12})
