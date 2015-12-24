@@ -7,6 +7,9 @@ LDFLAGS = -lcilkrts -openmp
 O_gridder = Main.o 
 X_gridder = gridder
 		
+O_gridder2 = GridderTBB.o 
+X_gridder2 = gridder2
+		
 O_griddes = ES.o 
 X_griddes = griddes
 
@@ -19,10 +22,13 @@ X_bpm2dx = bpm2dx
 O_griddex = Exclusion.o
 X_griddex = griddex
 
-all : gridder griddes griddex bpm2dx spm2dx
+all : gridder gridder2 griddes griddex bpm2dx spm2dx
 
 gridder: $(O_gridder) $(C_gridder)
 	$(CC) $(CFLAGS) $(O_gridder) $(C_gridder) -o $(X_gridder) $(LDFLAGS)
+
+gridder2: $(O_gridder2) $(C_gridder2)
+	$(CC) $(CFLAGS) $(O_gridder2) $(C_gridder2) -o $(X_gridder2) $(LDFLAGS) -ltbb
 
 griddes: $(O_griddes) $(C_griddes)
 	$(CC) $(CFLAGS) $(O_griddes) $(C_griddes) -o $(X_griddes) $(LDFLAGS)

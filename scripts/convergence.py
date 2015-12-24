@@ -67,7 +67,7 @@ def running_variance(x, y, w):
   return X, Y
 
 
-window = 200
+window = 100
 if b_stotal:
   for ci in range(len(r_stotal) - 1):
     newy = []
