@@ -25,7 +25,7 @@ bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
 
 
 void usage() {
-  printf("Usage: add -f FOO.maps.fld -l BAR.dlg -o Trajectory.pdb -b B_SPHERE_RADIUS -s BINDINGSITERadius,X,Y,Z [-R REPLICATES(=10000) -n NTHREADS(=max) -T TEMP_KELVIN(=298,room temp) -v VISCOSITY_cP(=1.,Water) -t MAXIMUM_TIME_PS(=100000000ps)]\n");
+  printf("Usage: add -f FOO.maps.fld -o Trajectory.pdb [-n NTHREADS(=max)]\n");
 }
 
 

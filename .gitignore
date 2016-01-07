@@ -1,3 +1,2 @@
 *.o
-gridder/gridder
-gridder/bpm2dx
+bin/*

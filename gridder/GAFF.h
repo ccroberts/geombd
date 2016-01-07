@@ -103,8 +103,8 @@ class GAFFParameters {
           double rij = 0.5 * (Rii[i] + Rii[j]);
           double eij = sqrt(epsii[i] * epsii[j]);
           parm = {
-            /*A*/eij * pow(rij, 12),
-            /*B*/2. * eij * pow(rij, 6)
+            /*A*/4. * eij * pow(rij, 12),
+            /*B*/4. * eij * pow(rij, 6)
           };
 
           lj_map[i].push_back(parm);

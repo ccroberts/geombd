@@ -5,7 +5,7 @@ CFLAGS = -O3 -std=c++0x -I/usr/include/x86_64-linux-gnu/c++/4.8/ -openmp -I../
 LDFLAGS = -lcilkrts -openmp
 		
 O_gridder = Main.o 
-X_gridder = probdx
+X_gridder = ../bin/probdx
 		
 
 all : gridder 

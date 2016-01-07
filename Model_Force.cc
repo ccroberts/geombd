@@ -217,7 +217,7 @@ void Model::integrate() {
             //Bi->done = true;
             *sar->Nexit += 1;
             Bi->session->positionLigand(Bi);
-            cout << "#" << Bi->session->id << "\t Escape event at t=" << Bi->t << " ps  (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
+            cout << "#" << Bi->session->id << "\t Escape event at t=" << Bi->t << " ps  l=" << sqrt(l2) << " (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
             Bi->t = 0.;
             Bi->t_dwell = 0.;
             Bi->t_dwell_max = 0.;
