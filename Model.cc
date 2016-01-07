@@ -9,6 +9,7 @@ Model::Model() {
   T = 298.;
   receptorRoG = 1e20;
   Nthreads = __cilkrts_get_nworkers();
+  Vtraj = 10000;
   step = 0;
   center.x = 0.;
   center.y = 0.;
@@ -73,7 +74,7 @@ void Model::run() {
     integrate();
     step++;
 
-    if(step % 20000 == 0) {
+    if(step % Vtraj == 0) {
       t.stop(); // end step timer
 
       writeCoordinatesPQR();
@@ -86,7 +87,7 @@ void Model::run() {
         }
       }
 
-      cout << "* Step " << step << " (" << (t.duration/20000.) << " s/step)" << endl;
+      cout << "* Step " << step << " (" << (t.duration/Vtraj) << " s/step)" << endl;
       printRateConstant();
 
       t.start(); // start step timer

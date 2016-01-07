@@ -55,6 +55,7 @@ class Model {
 
   public:
     int Nthreads;
+    int Vtraj;
     int active;
     int step;
     double dt_fine, dt_coarse;

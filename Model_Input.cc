@@ -83,6 +83,11 @@ void Model::parseInputFile() {
         T = stringToDouble(token);
         cout << "* System temperature: " << T << endl;
       }
+      if(token == "writetraj") {
+        parseNextValue(&line, &token);
+        Vtraj = stringToInt(token);
+        cout << "* Writing trajectory every " << Vtraj << " steps." << endl;
+      }
       if(token == "timestep") {
         parseNextValue(&line, &token);
         dt_fine = stringToDouble(token);
@@ -118,14 +123,7 @@ void Model::parseInputFile() {
 
       if(token == "ligand") {
         parseNextValue(&line, &token); //ligand filename
-        if(ends_with(&token, "pdbqt")) parseLigandPDBQT(token);
-        else {
-          //if(ends_with(&token, "dlg")) parseLigandDLG(token);
-          //else {
-            cout << "! Ligand input file not of type PDBQT. Quitting." << endl;
-            exit(EXIT_FAILURE);
-          //}
-        }
+        parseLigandPDBQT(token);
         parseNextValue(&line, &token); //Nreplicates
         sessions[sessions.size()-1]->Nreplicates = stringToInt(token);
         cout<< " + Ligand replicates: " << token << endl;

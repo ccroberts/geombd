@@ -44,7 +44,8 @@ def process_receptor(ff, resname, resid, resdata):
     for line in resdata:
       tmpfd.write(line)
     tmpfd.close()
-    subprocess.call(["babel", "-ipdb", "/tmp/het.pdb", "-omol2", "/tmp/het.mol2"])
+    subprocess.call(["babel", "-ipdb", "/tmp/het.pdb", "-opdb", "/tmp/heth.pdb", "-h"])
+    subprocess.call(["babel", "-ipdb", "/tmp/heth.pdb", "-omol2", "/tmp/het.mol2"])
     Q = []
     tmpfd = open('/tmp/het.mol2', 'r')
     tmpfd.readline()
@@ -58,10 +59,13 @@ def process_receptor(ff, resname, resid, resdata):
       sp = line.split()
       q = float(sp[-1])
       Q.append(q)
-    for i,line in enumerate(resdata):
-      at = line[12:16].strip()
-      # todo... better atom type parsing
-      print '%s  1.00  0.00   %7.3f %s' % (line[:54], Q[i], at[0])
+    i = 0
+    for line in open('/tmp/heth.pdb', 'r'):
+      if line.startswith('ATOM') or line.startswith('HETATM'):
+        at = line[12:16].strip()
+        # todo... better atom type parsing
+        print '%s  1.00  0.00   %7.3f %s' % (line[:54], Q[i], at[0])
+        i += 1
 
 
 

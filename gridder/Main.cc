@@ -181,10 +181,20 @@ int main(int argc, char **argv) {
   timer->print(&cout);
   cout << "> Starting grid calculation." << endl;
 
+  vector<int> atoms;
+
   // Start a timer and start our calculations
   timer->start();
   for(int nx=0, nt=0; nx < Npoints[0]; nx++) {
     double X = (nx * grid_resolution) + origin.x;
+
+    atoms.clear();
+    for(int i=0; i < rec->coordinates.size(); i++) {
+      vertex Rrec = rec->coordinates[i];
+      if(Rrec.x <= X + padding and Rrec.x >= X - padding)
+        atoms.push_back(i);
+    }
+
     for(int ny=0; ny < Npoints[1]; ny++) {
       double Y = (ny * grid_resolution) + origin.y;
       cilk_for(int nz=0; nz < Npoints[2]; nz++) {
@@ -195,12 +205,14 @@ int main(int argc, char **argv) {
         for(int at=0; at < type_t.size(); at++)
           data_t[at][nz] = 0;
 
-        for(int i=0; i < rec->coordinates.size(); i++) {
-          vertex Rrec = rec->coordinates[i];
+        for(int i=0; i < atoms.size(); i++) {
+          vertex Rrec = rec->coordinates[atoms[i]];
           vertex dr;
           dr.x = X - Rrec.x; 
           dr.y = Y - Rrec.y; 
+          if(dr.y > padding) continue;
           dr.z = Z - Rrec.z; 
+          if(dr.z > padding) continue;
           double dist_sqr = dr.x*dr.x + dr.y*dr.y + dr.z*dr.z;
           if(dist_sqr > padding_sqr) continue;
           double dist = sqrt(dist_sqr);
@@ -214,6 +226,7 @@ int main(int argc, char **argv) {
             if(lig_type > rec_type) parm = adp->lj_map[lig_type][rec_type];
             else parm = adp->lj_map[rec_type][lig_type];
             double du_t = (parm.A / dist_12) - (parm.B / dist_6);
+            if(du_t > 1000.) du_t = 1000.;
             data_t[at][nz] += du_t;
           }
         }
