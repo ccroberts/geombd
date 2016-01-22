@@ -34,6 +34,7 @@ void Model::integrate() {
               bi->F.x += dF.x;
               bi->F.y += dF.y;
               bi->F.z += dF.z;
+              if(E > 200.) cout << "> !Ee = " << E << endl;
             }
           }
           for(int apbs=0; apbs < apbsmaps.size(); apbs++) {
@@ -61,10 +62,9 @@ void Model::integrate() {
         }
       }
 
-      // determine timestep
+      // Determine timestep
       double dt = (onGrid) ? dt_fine : dt_coarse;
       double dtOVERkBT = dt / (kB * T);
-
 
       // Propogate bead forces to body
       Bi->F.x = 0.;
@@ -113,66 +113,22 @@ void Model::integrate() {
       dRa.z = (C * Sai->z) + (D * Bi->Fa.z);
       Bi->rotate(dRa.x, dRa.y, dRa.z);
 
-      bool valid = true;
-      for(int i=0; i < Bi->beads.size(); i++) {
-        Bead *bi = Bi->beads[i];
-        vertex tR = { bi->R.x + dR.x, bi->R.y + dR.y, bi->R.z + dR.z };
+      // Increment time
+      Bi->t += dt;
 
-        for(int ex=0; ex < xmaps.size(); ex++) {
-          ExclusionMap *em = xmaps[ex];
-          if(em->onGrid(&tR)) {
-            short v = xmaps[ex]->value(&tR);
-            if(v == 1)  {
-              Bi->translate(-dR.x, -dR.y, -dR.z);
-              Bi->rotate(-dRa.x, -dRa.y, -dRa.z);
-              valid = false;
-              break;
-            }
-          }
-        }
-        if(!valid) break;
-      }
-      if(valid) {
-        // increment time
-        Bi->t += dt;
-        // record dwell-time
-        if(onGrid and associated) {
-          Bi->t_dwell += dt;
-          Bi->t_dwell_total += dt;
+      // Record dwell-time
+      if(onGrid and associated) {
+        Bi->t_dwell += dt;
+        Bi->t_dwell_total += dt;
+        if(Bi->t_dwell > Bi->t_dwell_max) Bi->t_dwell_max = Bi->t_dwell;
+      } else {
+        if(Bi->t_dwell > 0.) {
           if(Bi->t_dwell > Bi->t_dwell_max) Bi->t_dwell_max = Bi->t_dwell;
-        } else {
-          if(Bi->t_dwell > 0.) {
-            if(Bi->t_dwell > Bi->t_dwell_max) Bi->t_dwell_max = Bi->t_dwell;
-            Bi->t_dwell = 0.;
-          }
-        }
-      }
-
-
-      if(Bi->session->type == CONFIGURATION_ABSOLUTE_PERIODIC) {
-        // check for periodic wrapping
-        SessionAbsolutePeriodic *sap = (SessionAbsolutePeriodic*)Bi->session;
-        if(Bi->R.x > 0.5*sap->bounds.x)  { Bi->translate(-sap->bounds.x, 0., 0.); }
-        if(Bi->R.y > 0.5*sap->bounds.y)  { Bi->translate(0., -sap->bounds.y, 0.); }
-        if(Bi->R.z > 0.5*sap->bounds.z)  { Bi->translate(0., 0., -sap->bounds.z); }
-        if(Bi->R.x < -0.5*sap->bounds.x) { Bi->translate(sap->bounds.x, 0., 0.);  }
-        if(Bi->R.y < -0.5*sap->bounds.y) { Bi->translate(0., sap->bounds.y, 0.);  }
-        if(Bi->R.z < -0.5*sap->bounds.z) { Bi->translate(0., 0., sap->bounds.z);  }
-
-        // check for timed-out ligands
-        if(Bi->t >= sap->t_max) {
-          //Bi->done = true;
-          *Bi->session->Ntlim += 1;
-          Bi->session->positionLigand(Bi);
-          cout << "#" << Bi->session->id << "\t Time-out event  (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
-          Bi->t = 0.;
           Bi->t_dwell = 0.;
-          Bi->t_dwell_max = 0.;
-          Bi->t_dwell_total = 0.;
         }
       }
 
-      // check for binding
+      // Binding criteria check
       for(int bs=0; bs < Bi->session->bindingCriteria.size(); bs++) {
         BindingCriteria* bc = Bi->session->bindingCriteria[bs];
         if(bc->checkBinding(Bi)) {
@@ -191,40 +147,9 @@ void Model::integrate() {
         }
       }
 
-      // check for escape
-      double dr[3], l2;
-      if(Bi->session->type == CONFIGURATION_RADIAL or Bi->session->type == CONFIGURATION_ABSOLUTE_RADIAL) {
-        dr[0] = Bi->R.x - center.x;
-        dr[1] = Bi->R.y - center.y;
-        dr[2] = Bi->R.z - center.z;
-        l2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
-        if(Bi->session->type == CONFIGURATION_RADIAL) {
-          SessionRadial *sr = (SessionRadial*)Bi->session;
-          if(l2 >= sr->q2) {
-            //Bi->done = true;
-            *sr->Nexit += 1;
-            Bi->session->positionLigand(Bi);
-            cout << "#" << Bi->session->id << "\t Escape event at t=" << Bi->t << " ps  (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
-            Bi->t = 0.;
-            Bi->t_dwell = 0.;
-            Bi->t_dwell_max = 0.;
-            Bi->t_dwell_total = 0.;
-          }
-        }
-        if(Bi->session->type == CONFIGURATION_ABSOLUTE_RADIAL) {
-          SessionAbsoluteRadial *sar = (SessionAbsoluteRadial*)Bi->session;
-          if(l2 >= sar->q2) {
-            //Bi->done = true;
-            *sar->Nexit += 1;
-            Bi->session->positionLigand(Bi);
-            cout << "#" << Bi->session->id << "\t Escape event at t=" << Bi->t << " ps  l=" << sqrt(l2) << " (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
-            Bi->t = 0.;
-            Bi->t_dwell = 0.;
-            Bi->t_dwell_max = 0.;
-            Bi->t_dwell_total = 0.;
-          }
-        }
-      }
+      // Session specific checks (escape, periodic wrapping, time limits, etc.)
+      Bi->session->checkLigand(Bi);
+
     }
   }
 

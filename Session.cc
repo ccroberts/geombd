@@ -101,6 +101,25 @@ void SessionRadial::printRateConstant() {
 }
 
 
+void SessionRadial::checkLigand(Body *bi) {
+  double dr[3], l2;
+  dr[0] = bi->R.x - model->center.x;
+  dr[1] = bi->R.y - model->center.y;
+  dr[2] = bi->R.z - model->center.z;
+  l2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
+  if(l2 >= q2) {
+    //bi->done = true;
+    *Nexit += 1;
+    bi->session->positionLigand(bi);
+    cout << "#" << id << "\t Escape event at t=" << bi->t << " ps  (t_dwell=" << bi->t_dwell << "ps, max=" << bi->t_dwell_max << "ps, total=" << bi->t_dwell_total << "ps)" << endl;
+    bi->t = 0.;
+    bi->t_dwell = 0.;
+    bi->t_dwell_max = 0.;
+    bi->t_dwell_total = 0.;
+  }
+}
+
+
 
 SessionAbsolutePeriodic::SessionAbsolutePeriodic(Model *m) : Session(m, CONFIGURATION_ABSOLUTE_PERIODIC) {
   b = 0.;
@@ -141,6 +160,26 @@ void SessionAbsolutePeriodic::printRateConstant() {
 }
 
 
+void SessionAbsolutePeriodic::checkLigand(Body *bi) {
+  if(bi->R.x > 0.5*bounds.x)  { bi->translate(-bounds.x, 0., 0.); }
+  if(bi->R.y > 0.5*bounds.y)  { bi->translate(0., -bounds.y, 0.); }
+  if(bi->R.z > 0.5*bounds.z)  { bi->translate(0., 0., -bounds.z); }
+  if(bi->R.x < -0.5*bounds.x) { bi->translate(bounds.x, 0., 0.);  }
+  if(bi->R.y < -0.5*bounds.y) { bi->translate(0., bounds.y, 0.);  }
+  if(bi->R.z < -0.5*bounds.z) { bi->translate(0., 0., bounds.z);  }
+
+  if(bi->t >= t_max) {
+    //bi->done = true;
+    *Ntlim += 1;
+    positionLigand(bi);
+    cout << "#" << id << "\t Time-out event  (t_dwell=" << bi->t_dwell << "ps, max=" << bi->t_dwell_max << "ps, total=" << bi->t_dwell_total << "ps)" << endl;
+    bi->t = 0.;
+    bi->t_dwell = 0.;
+    bi->t_dwell_max = 0.;
+    bi->t_dwell_total = 0.;
+  }
+}
+
 
 SessionAbsoluteRadial::SessionAbsoluteRadial(Model *m) : Session(m, CONFIGURATION_ABSOLUTE_RADIAL) {
   t_avgt.set_value(0.);
@@ -172,6 +211,74 @@ void SessionAbsoluteRadial::printRateConstant() {
 
   printf("   (session %d)   k_direct = %.5e s⁻¹ ± %.1f%% (Nbind=%d Ndone=%d βdirect=%.4f tavg=%.5e Davg=%.5e)", id, k, 100.*pow(Nbind.get_value(), -0.5), Nbind.get_value(), Ndone, B, tavg, Davg);
   cout << endl;
+}
+
+
+void SessionAbsoluteRadial::checkLigand(Body *bi) {
+  double dr[3], l2;
+  dr[0] = bi->R.x - model->center.x;
+  dr[1] = bi->R.y - model->center.y;
+  dr[2] = bi->R.z - model->center.z;
+  l2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
+
+  if(l2 >= q2) {
+    //bi->done = true;
+    *Nexit += 1;
+    bi->session->positionLigand(bi);
+    cout << "#" << id << "\t Escape event at t=" << bi->t << " ps  l=" << sqrt(l2) << " (t_dwell=" << bi->t_dwell << "ps, max=" << bi->t_dwell_max << "ps, total=" << bi->t_dwell_total << "ps)" << endl;
+    bi->t = 0.;
+    bi->t_dwell = 0.;
+    bi->t_dwell_max = 0.;
+    bi->t_dwell_total = 0.;
+  }
+}
+
+
+SessionMilestone::SessionMilestone(Model *m) : Session(m, CONFIGURATION_MILESTONE) {
+  state = NULL;
+  spacing = 100.;
+  reaction = 15.;
+}
+
+void SessionMilestone::positionLigand(Body *bi) {
+  vertex Q = { random(-1., 1.), random(-1., 1.), random(-1., 1.) };
+  double l = sqrt(Q.x*Q.x + Q.y*Q.y + Q.z*Q.z);
+  Q.x *= state->r0 / l;
+  Q.y *= state->r0 / l;
+  Q.z *= state->r0 / l;
+ 
+  bi->center();
+  bi->translate(model->center.x + Q.x, model->center.y + Q.y, model->center.z + Q.z);
+  bi->rotate(random(0., M_PI), random(0., M_PI), random(0., M_PI));
+}
+
+
+void SessionMilestone::printRateConstant() {
+  const std::list<double> &tfwds = state->tfwd.get_value();
+  int Nfwd = tfwds.size();
+  const std::list<double> &tbcks = state->tbck.get_value();
+  int Nbck = tbcks.size();
+
+  printf("   (session %d)   Sampled %d progressions (%d fwd, %d bck)", id, Nfwd+Nbck, Nfwd, Nbck);
+  cout << endl;
+}
+
+
+void SessionMilestone::checkLigand(Body *bi) {
+  double dr[3], l2, l;
+  dr[0] = bi->R.x - model->center.x;
+  dr[1] = bi->R.y - model->center.y;
+  dr[2] = bi->R.z - model->center.z;
+  l2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
+  l = sqrt(l2);
+
+  if(l >= state->r0 + 0.5*spacing) {
+    state->tbck->push_back(bi->t);    
+    positionLigand(bi);
+  } else if(l <= state->r0 - 0.5*spacing) {
+    state->tfwd->push_back(bi->t);    
+    positionLigand(bi);
+  }
 }
 
 
