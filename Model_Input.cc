@@ -67,6 +67,7 @@ void Model::parseInputFile() {
         cout << " done. ";
         t->print(&cout);
       }
+      /*
       if(token == "ex") {
         parseNextValue(&line, &token);
         cout << "* Loading exclusion map \"" << token << "\"...";
@@ -78,6 +79,7 @@ void Model::parseInputFile() {
         cout << " done. ";
         t->print(&cout);
       }
+      */
       if(token == "temperature") {
         parseNextValue(&line, &token);
         T = stringToDouble(token);
@@ -97,7 +99,7 @@ void Model::parseInputFile() {
       }
       if(token == "receptor") {
         parseNextValue(&line, &token);
-        parseReceptorPDBQT(token);
+        parseReceptorPDBQE(token);
       }
       if(token == "associate") {
         SessionRadial *sr = new SessionRadial(this);
@@ -123,7 +125,7 @@ void Model::parseInputFile() {
 
       if(token == "ligand") {
         parseNextValue(&line, &token); //ligand filename
-        parseLigandPDBQT(token);
+        parseLigandPDBQE(token);
         parseNextValue(&line, &token); //Nreplicates
         sessions[sessions.size()-1]->Nreplicates = stringToInt(token);
         cout<< " + Ligand replicates: " << token << endl;
@@ -149,6 +151,23 @@ void Model::parseInputFile() {
           sar->start.z = _fz;
           cout << " + Ligand starting position: " << _fx << ", " << _fy << ", " << _fz << endl;
         }
+      }
+      if(token == "bind") {
+        BindingCriteria *bc = new BindingCriteria();
+        cout << " + Binding criteria (AND): " << endl;
+        parseNextValue(&line, &token);
+        double bx = stringToDouble(token);
+        parseNextValue(&line, &token);
+        double by = stringToDouble(token);
+        parseNextValue(&line, &token);
+        double bz = stringToDouble(token);
+        parseNextValue(&line, &token);
+        int laid = stringToInt(token);
+        parseNextValue(&line, &token);
+        double r = stringToDouble(token);
+        bc->addPair(bx, by, bz, laid-1, r);
+        cout << "    - LAID: " << laid << " within " << r << "A of (" << bx << " " << by << " " << bz << ")" << endl;
+        sessions[sessions.size()-1]->bindingCriteria.push_back(bc);
       }
       if(token == "bindand") {
         BindingCriteria *bc = new BindingCriteria();
@@ -232,6 +251,29 @@ void Model::parseInputFile() {
           cout << " + Time limit set to " << sap->t_max << " ps" << endl;
         }
       }
+      // Miletone specific
+      if(token == "milestone") {
+        SessionMilestone *sm = new SessionMilestone(this);
+        sessions.push_back(sm);
+        sm->id = sessions.size();
+        cout << "* Defining session: Milestone" << endl;
+        parseNextValue(&line, &token);
+        sm->spacing = stringToDouble(token);
+      }
+      if(token == "reaction") {
+        SessionMilestone *sm = dynamic_cast< SessionMilestone* >(sessions[sessions.size()-1]);
+        if(sm) {
+          parseNextValue(&line, &token);
+          center.x = stringToDouble(token);
+          parseNextValue(&line, &token);
+          center.y = stringToDouble(token);
+          parseNextValue(&line, &token);
+          center.z = stringToDouble(token);
+          parseNextValue(&line, &token);
+          sm->states.push_back(new MilestoneState(stringToDouble(token) + sm->spacing*0.5));
+          sm->state = sm->states[0];
+        }
+      }
     }
   }
 
@@ -239,7 +281,7 @@ void Model::parseInputFile() {
 }
 
 
-void Model::parseReceptorPDBQT(string rfn) {
+void Model::parseReceptorPDBQE(string rfn) {
   string line, token;
   vector<double> rx;
   vector<double> ry;
@@ -290,7 +332,7 @@ void Model::parseReceptorPDBQT(string rfn) {
 }
 
 
-void Model::parseLigandPDBQT(string lfn) {
+void Model::parseLigandPDBQE(string lfn) {
   string line, token;
   Body *bi = new Body(this, sessions[sessions.size()-1]);
   Bead *bj = NULL;
@@ -310,8 +352,8 @@ void Model::parseLigandPDBQT(string lfn) {
       double x = stringToDouble(line.substr(30, 8));
       double y = stringToDouble(line.substr(38, 8));
       double z = stringToDouble(line.substr(46, 8));
-      double q = stringToDouble(line.substr(70, 6));
-      string at = line.substr(77, 2);
+      double q = stringToDouble(line.substr(70, 7));
+      string at = line.substr(78, 2);
       if(at == "A")  at = "C";
       if(at == "HD") at = "H";
       if(at == "HS") at = "H";

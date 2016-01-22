@@ -8,7 +8,7 @@
 #include "ESPotentialMap.h"
 #include "APBSPotentialMap.h"
 #include "Session.h"
-#include "ExclusionMap.h"
+//#include "ExclusionMap.h"
 
 
  
@@ -19,8 +19,8 @@ class Model {
   public:
     string ifn;
     void parseInputFile();
-    void parseReceptorPDBQT(string rfn);
-    void parseLigandPDBQT(string lfn);
+    void parseReceptorPDBQE(string rfn);
+    void parseLigandPDBQE(string lfn);
 
   private:
     string ofn;
@@ -49,7 +49,7 @@ class Model {
     vector< ESPotentialMap* > esmaps;
     vector< APBSPotentialMap* > apbsmaps;
     vector< TypePotentialMap* > typemaps;
-    vector< ExclusionMap* > xmaps;
+    //vector< ExclusionMap* > xmaps;
 
     vertex center;
 

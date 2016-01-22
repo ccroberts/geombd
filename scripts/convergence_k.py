@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python
 
 import matplotlib
 matplotlib.use('Agg')
@@ -62,6 +62,7 @@ for line in open(sys.argv[1], 'r'):
     y[sid][bsid].append(kon)
     b[sid][bsid].append(bnd)
 
+
 window = 100
 if b_stotal:
   for ci in range(len(r_stotal) - 1):
@@ -93,6 +94,8 @@ else:
 plt.legend(loc='upper right', prop={'size':12})
 plt.ylabel('Rate Constant', fontsize=16)
 plt.xlabel('Completed Substrate Replicate Simulations', fontsize=16)
+plt.axes().ticklabel_format(style='sci', axis='both', scilimits=(0,0))
+
 if yrange != None:
   plt.ylim(yrange)
 

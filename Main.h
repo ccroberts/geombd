@@ -15,6 +15,7 @@
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
 #include <cilk/reducer_opadd.h>
+#include <cilk/reducer_list.h>
 #include <mkl.h>
 #include <limits.h>
 
@@ -59,7 +60,8 @@ struct vertex {
 enum SimulationConfig {
   CONFIGURATION_RADIAL,
   CONFIGURATION_ABSOLUTE_RADIAL,
-  CONFIGURATION_ABSOLUTE_PERIODIC
+  CONFIGURATION_ABSOLUTE_PERIODIC,
+  CONFIGURATION_MILESTONE
 };
 
 /*

@@ -43,6 +43,7 @@ class BinaryPotentialMap {
         for(int ny=0; ny < N[1]; ny++) {
           for(int nz=0; nz < N[2]; nz++) {
             fd.read((char*)&data[nx][ny][nz], sizeof(double));
+            if(data[nx][ny][nz] > 400.) data[nx][ny][nz] = 400.;
           }
         }
       }

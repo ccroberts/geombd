@@ -137,7 +137,7 @@ class LigandPDBQT {
       while(getline(fd, line)) {
         if(line[0] == '#') continue;
         if(line.substr(0, 4) == "ATOM") {
-          string t = line.substr(77, 2);
+          string t = line.substr(78, 2);
           string tt = rtrim(t);
           if(tt == "A") tt = "C";
           if(tt == "HD") tt = "H";
@@ -202,7 +202,7 @@ class ReceptorPDBQT {
           if(R.y < min.y) min.y = R.y;
           if(R.z < min.z) min.z = R.z;
           // type
-          string t = line.substr(77, 2);
+          string t = line.substr(78, 2);
           string tt = rtrim(t);
           if(tt == "A") tt = "C";
           if(tt == "HD") tt = "H";
@@ -223,7 +223,7 @@ class ReceptorPDBQT {
             types.push_back(adp->index_for_type(tt));
           types_set.insert(tt);
           // charge
-          double q = stringToDouble(line.substr(68, 8));
+          double q = stringToDouble(line.substr(69, 8));
           charges.push_back(q);
           // radius
           int ati = -1;
