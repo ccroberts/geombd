@@ -6,6 +6,9 @@
 
  
 class Bead {
+  private:
+    vertex _R;
+
   public:
     vertex R;
     vertex F;
@@ -32,6 +35,20 @@ class Bead {
     }
 
 
+    void saveR() {
+      _R.x = R.x;
+      _R.y = R.y;
+      _R.z = R.z;
+    }
+
+
+    void restoreR() {
+      R.x = _R.x;
+      R.y = _R.y;
+      R.z = _R.z;
+    }
+
+
     void translate(double dx, double dy, double dz) {
       R.x += dx;
       R.y += dy;
@@ -41,87 +58,38 @@ class Bead {
 
     void rotate(double dax, double day, double daz) {
       double rm[3][3];
-      double cost, sint;
+      double cosa, sina;
+      double cosb, sinb;
+      double cosc, sinc;
 
       double v[3] = { R.x, R.y, R.z };
       double p[3] = { 0., 0., 0. };
 
-      if(dax != 0) {
-        cost = cos(dax);
-        sint = sin(dax);
+      cosa = cos(dax);
+      sina = sin(dax);
+      cosb = cos(day);
+      sinb = sin(day);
+      cosc = cos(daz);
+      sinc = sin(daz);
 
-        rm[0][0] = 1;
-        rm[0][1] = 0.;
-        rm[0][2] = 0.;
+      rm[0][0] = cosb*cosc;
+      rm[0][1] = cosc*sina*sinb - cosa*sinc;
+      rm[0][2] = cosa*cosc*sinb + sina*sinc;
 
-        rm[1][0] = 0.;
-        rm[1][1] = cost;
-        rm[1][2] = -sint;
+      rm[1][0] = cosb*sinc;
+      rm[1][1] = cosa*cosc + sina*sinb*sinc;
+      rm[1][2] = -cosc*sina + cosa*sinb*sinc;
 
-        rm[2][0] = 0.;
-        rm[2][1] = sint;
-        rm[2][2] = cost;
+      rm[2][0] = -sinb;
+      rm[2][1] = cosb*sina;
+      rm[2][2] = cosa*cosb;
 
-        for(int n=0; n < 3; n++)
-          for(int m=0; m < 3; m++)
-            p[n] += rm[n][m] * v[m];
+      for(int n=0; n < 3; n++)
+        for(int m=0; m < 3; m++)
+          p[n] += rm[n][m] * v[m];
 
-        for(int n=0; n < 3; n++) {
-          v[n] = p[n];
-          p[n] = 0.;
-        }
-      }
-
-      if(day != 0) {
-        cost = cos(day);
-        sint = sin(day);
-
-        rm[0][0] = cost;
-        rm[0][1] = 0.;
-        rm[0][2] = sint;
-
-        rm[1][0] = 0.;
-        rm[1][1] = 1;
-        rm[1][2] = 0.;
-
-        rm[2][0] = -sint;
-        rm[2][1] = 0.;
-        rm[2][2] = cost;
-
-        for(int n=0; n < 3; n++)
-          for(int m=0; m < 3; m++)
-            p[n] += rm[n][m] * v[m];
-
-        for(int n=0; n < 3; n++) {
-          v[n] = p[n];
-          p[n] = 0.;
-        }
-      }
-
-      if(daz != 0) {
-        cost = cos(daz);
-        sint = sin(daz);
-
-        rm[0][0] = cost;
-        rm[0][1] = -sint;
-        rm[0][2] = 0.;
-
-        rm[1][0] = sint;
-        rm[1][1] = cost;
-        rm[1][2] = 0.;
-
-        rm[2][0] = 0.;
-        rm[2][1] = 0.;
-        rm[2][2] = 1;
-
-        for(int n=0; n < 3; n++)
-          for(int m=0; m < 3; m++)
-            p[n] += rm[n][m] * v[m];
-
-        for(int n=0; n < 3; n++) {
-          v[n] = p[n];
-          p[n] = 0.;
-        }
+      for(int n=0; n < 3; n++) {
+        v[n] = p[n];
       }
 
       R.x = v[0];

@@ -1,6 +1,6 @@
 #include "Main.h"
 #include "Strings.h"
-#include "GAFF.h"
+#include "GBD2Parameters.h"
 #include "Timer.h"
 
 bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
@@ -24,7 +24,7 @@ bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
 
 
 void usage() {
-  printf("Usage: Gridder-EX -d [FORCEFIELD.ff] -n NTHREADS(=max) -r [Receptor.PQR] (Optional: -p GRID_PADDING(=40A) -s GRID_SPACING(=0.375A) -m RECEPTOR_RADIUS_SCALING(=1.25) -w OutputFilenamePrefix))\n");
+  printf("Usage: Gridder-EX -o [OUT.spm] -d [FORCEFIELD.ff] -n NTHREADS(=max) -r [Receptor.PQR] (Optional: -p GRID_PADDING(=40A) -s GRID_SPACING(=0.375A) -m RECEPTOR_RADIUS_SCALING(=1.25) -w OutputFilenamePrefix))\n");
 }
 
 
@@ -37,13 +37,15 @@ bool coordinateToGrid(double x, double y, double z, int *Gx, int *Gy, int *Gz, v
 
 
 int main(int argc, char **argv) {
-  string datfn, ligfn, recfn, fldfn, stoken, token, name_prefix;
+  string datfn, outfn, ligfn, recfn, fldfn, stoken, token, name_prefix;
   double grid_resolution = 0.375;
   double padding = 40., padding_sqr;
   double scaling = 1.25;
 
-  // GAFF parameter file
+  // GBD2 parameter file
   if(!getInputWithFlag(argc, argv, 'd', &datfn)) { usage(); return -1; }
+  // out file
+  if(!getInputWithFlag(argc, argv, 'o', &outfn)) { usage(); return -1; }
   // receptor pqr
   if(!getInputWithFlag(argc, argv, 'r', &recfn)) { usage(); return -1; }
   // number of processors/threads
@@ -69,10 +71,10 @@ int main(int argc, char **argv) {
   }
 
   // Load AD parameters
-  GAFFParameters *adp = new GAFFParameters(datfn);
+  GBD2Parameters *adp = new GBD2Parameters(datfn);
   // Load receptor file
-  cout << "> Loading receptor PDBQT..." << endl;
-  ReceptorPDBQT *rec = new ReceptorPDBQT(recfn, adp);
+  cout << "> Loading receptor PDBQE..." << endl;
+  ReceptorPDBQE *rec = new ReceptorPDBQE(recfn, adp);
   cout << "> Receptor center: " << rec->center.x << ", " << rec->center.y << ", " << rec->center.z << endl;
   cout << "> Receptor minimum: " << rec->min.x << ", " << rec->min.y << ", " << rec->min.z << endl;
   cout << "> Receptor maximum coordinates: " << rec->max.x << ", " << rec->max.y << ", " << rec->max.z << endl;
@@ -85,7 +87,7 @@ int main(int argc, char **argv) {
   cout << "> Npoints: " << Npoints[0] << " " << Npoints[1] << " " << Npoints[2] << endl;
 
   //// Data for all grids
-  cout << "Allocating data" << endl;
+  cout << "> Allocating data" << endl;
   short ***data = (short***)calloc(Npoints[0], sizeof(short**));
   for(int i=0; i < Npoints[0]; i++) {
     data[i] = (short**)calloc(Npoints[1], sizeof(short*));
@@ -94,14 +96,13 @@ int main(int argc, char **argv) {
     }
   }
 
-  cout << "Opening file for writing." << endl;
   string ofn = name_prefix;
-  ofn.append("x.spm");
+  ofn.append(outfn);
   ofstream fo(ofn);
 
   // Start a timer and start our calculations
   Timer *timer = new Timer();
-  cout << "Starting timer." << endl;
+  cout << "> Starting calculation..." << endl;
   timer->start();
   for(int i=0; i < rec->coordinates.size(); i++) {
     vertex Rrec = rec->coordinates[i];
@@ -126,7 +127,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  cout << "Writing spm." << endl;
+  cout << "Writing spm..." << endl;
   fo.write((char*)&origin, sizeof(vertex));
   fo.write((char*)&Npoints, sizeof(int)*3);
   fo.write((char*)&grid_resolution, sizeof(double));
