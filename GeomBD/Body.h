@@ -11,6 +11,9 @@ class Session;
 
  
 class Body {
+  private:
+    vertex _R, _Ra;
+
   public:
     Model *model;
     Session *session;
@@ -29,8 +32,6 @@ class Body {
   public:
     double t;
     double dt;
-    bool done;     //no longer simulating
-    bool bound;    //bound to binding site
 
   public:
     double t_dwell, t_dwell_max, t_dwell_total;
@@ -42,12 +43,16 @@ class Body {
 
   public:
     virtual void define();
-    void writePDB(fstream &outf, char chain);
+    virtual void save();
+    virtual void restore();
 
   public:
     virtual void translate(double dx, double dy, double dz, bool suppressWarning=false);
     virtual void center();
     virtual void rotate(double dax, double day, double daz);
+
+  public:
+    void writePDB(fstream &outf, char chain);
 
 };
 

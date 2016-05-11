@@ -17,7 +17,7 @@ typedef vector<pair_parameter> Vec;
 typedef vector<Vec> PairMap;
 
 
-class GAFFParameters {
+class GBD2Parameters {
   public:
     /*
     double w_vdw;
@@ -29,9 +29,9 @@ class GAFFParameters {
     vector<string> types;
     vector<double> Rii;
     vector<double> epsii;
-    /*
     vector<double> vol;
     vector<double> solpar;
+    /*
     vector<double> Rij_hb;
     vector<double> epsij_hb;
     vector<int> hbond_type;
@@ -40,7 +40,7 @@ class GAFFParameters {
     PairMap lj_map;
 
   public:
-    GAFFParameters(string filename) {
+    GBD2Parameters(string filename) {
       string line, token;
       ifstream fd;
 
@@ -80,11 +80,11 @@ class GAFFParameters {
             Rii.push_back(stringToDouble(token));
             parseNextValue(&line, &token);
             epsii.push_back(stringToDouble(token));
-            /*
             parseNextValue(&line, &token);
             vol.push_back(stringToDouble(token));
             parseNextValue(&line, &token);
             solpar.push_back(stringToDouble(token));
+            /*
             parseNextValue(&line, &token);
             Rij_hb.push_back(stringToDouble(token));
             parseNextValue(&line, &token);
@@ -120,7 +120,7 @@ class GAFFParameters {
       for(int i=0; i < types.size(); i++) {
         if(types[i] == type) return i;
       }
-      cout << "* Warning: GAFFParameters::index_for_type returning -1" << endl;
+      cout << "* Warning: GBD2Parameters::index_for_type returning -1" << endl;
       return -1;
     }
 
@@ -128,12 +128,12 @@ class GAFFParameters {
 };
 
 
-class LigandPDBQT {
+class LigandPDBQE {
   public:
     set<string> types_set;
 
   public:
-    LigandPDBQT(string filename) {
+    LigandPDBQE(string filename) {
       string line, token;
       ifstream fd;
 
@@ -166,7 +166,7 @@ class LigandPDBQT {
 
 
 
-class ReceptorPDBQT {
+class ReceptorPDBQE {
   public:
     vector<vertex> coordinates;
     vertex center;
@@ -178,7 +178,7 @@ class ReceptorPDBQT {
     vector<double> radii;
 
   public:
-    ReceptorPDBQT(string filename, GAFFParameters *adp) {
+    ReceptorPDBQE(string filename, GBD2Parameters *adp) {
       string line, token;
       ifstream fd;
 

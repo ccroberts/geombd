@@ -19,6 +19,17 @@ for line in open(sys.argv[1], 'r'):
     center[2] += z
     N += 1
 
+
+invSumRij = 0.
+for i in range(N):
+  for j in range(i+1, N):
+    drx = coords[i][0] - coords[j][0]
+    dry = coords[i][1] - coords[j][1]
+    drz = coords[i][2] - coords[j][2]
+    invSumRij += 1. / math.sqrt(drx*drx + dry*dry + drz*drz)
+invRhyd = (1.0 / pow(N, 2)) * invSumRij
+Rhyd = 1.0 / invRhyd
+
 center[0] /= N
 center[1] /= N
 center[2] /= N
@@ -38,3 +49,4 @@ print 'ROJ:', rmsd
 print 'Center:', center
 print 'Max:', maxc
 print 'Min:', minc
+print 'Rhyd:', Rhyd

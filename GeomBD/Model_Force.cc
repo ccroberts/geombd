@@ -12,7 +12,7 @@ void Model::integrate() {
   cilk_for(int il=0; il < ligands.size(); il++) {
     Body *Bi = ligands[il];
 
-    if(! Bi->done) {
+    //if(! Bi->done) {
       bool onGrid = false, associated = false;
       double E;
 
@@ -34,14 +34,24 @@ void Model::integrate() {
               bi->F.x += dF.x;
               bi->F.y += dF.y;
               bi->F.z += dF.z;
-              if(E > 200.) cout << "> !Ee = " << E << endl;
+            }
+          }
+          for(int ds=0; ds < dmaps.size(); ds++) {
+            if(dmaps[ds]->force(&bi->R, &dF, bi->q, &E)) {
+              onGrid = true;
+              bi->F.x += dF.x;
+              bi->F.y += dF.y;
+              bi->F.z += dF.z;
+              if(fabs(E) > 0) {
+                associated = true;
+              }
             }
           }
         }
 
         for(int tmap=0; tmap < typemaps.size(); tmap++) {
           if(typemaps[tmap]->type == bi->type) {
-            if(typemaps[tmap]->force(&bi->R, &dF, &E)) {
+            if(typemaps[tmap]->approximate_force(&bi->R, &dF, &E, 0.01)) {
               onGrid = true;
               if(fabs(E) > 0) {
                 associated = true;
@@ -54,21 +64,6 @@ void Model::integrate() {
         }
       }
 
-      // Determine timestep
-      double dr[3], radius2, radius;
-      dr[0] = Bi->R.x - center.x;
-      dr[1] = Bi->R.y - center.y;
-      dr[2] = Bi->R.z - center.z;
-      radius2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
-      double dt;
-      if(radius2 > dt_scale_start and radius2 < dt_scale_end) {
-        double s = (radius2 - dt_scale_start) / (dt_scale_end - dt_scale_start);
-        dt = dt_fine + s * (dt_coarse - dt_fine);
-      } else {
-        if(radius2 <= dt_scale_start) dt = dt_fine;
-        if(radius2 >= dt_scale_end) dt = dt_coarse;
-      }
-      double dtOVERkBT = dt / (kB * T);
 
       // Propogate bead forces to body
       Bi->F.x = 0.;
@@ -97,6 +92,26 @@ void Model::integrate() {
         Bi->Fa.z += B.z;
       }
 
+      // Determine timestep
+      double dr[3], radius2, radius;
+      dr[0] = Bi->R.x - center.x;
+      dr[1] = Bi->R.y - center.y;
+      dr[2] = Bi->R.z - center.z;
+      radius2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
+      double dt;
+      if(radius2 > dt_scale_start and radius2 < dt_scale_end) {
+        double s = (radius2 - dt_scale_start) / (dt_scale_end - dt_scale_start);
+        dt = dt_fine + s * (dt_coarse - dt_fine);
+      } else {
+        if(radius2 <= dt_scale_start) dt = dt_fine;
+        if(radius2 >= dt_scale_end) dt = dt_coarse;
+      }
+      /*if(onGrid) {
+        dt = min(dt_fine / (sqrt(Bi->F.x*Bi->F.x + Bi->F.y*Bi->F.y + Bi->F.z*Bi->F.z) / 2.), dt_fine);
+      }*/
+
+      // Backup coordinates
+      Bi->save();
 
       // Integrate
       vertex *Si = &rand[il];
@@ -104,6 +119,7 @@ void Model::integrate() {
 
       vertex dR, dRa;
       double A = sqrt(2. * Bi->D * dt);
+      double dtOVERkBT = dt / (kB * T);
       double B = Bi->D * dtOVERkBT;
       dR.x = (A * Si->x) + (B * Bi->F.x);
       dR.y = (A * Si->y) + (B * Bi->F.y);
@@ -132,8 +148,9 @@ void Model::integrate() {
         if(penetrating) break;
       }
       if(penetrating) {
-        Bi->translate(-dR.x, -dR.y, -dR.z);
-        Bi->rotate(-dRa.x, -dRa.y, -dRa.z);
+        Bi->restore();
+        //Bi->translate(-dR.x, -dR.y, -dR.z);
+        //Bi->rotate(-dRa.x, -dRa.y, -dRa.z);
         continue;
       }
 
@@ -152,6 +169,9 @@ void Model::integrate() {
         }
       }
 
+      // Session-specific checks
+      Bi->session->checkLigand(Bi);
+
       // Binding criteria check
       for(int bs=0; bs < Bi->session->bindingCriteria.size(); bs++) {
         BindingCriteria* bc = Bi->session->bindingCriteria[bs];
@@ -163,7 +183,7 @@ void Model::integrate() {
           *bc->Nbind += 1;
           *bc->t_avgt += Bi->t;
           Bi->session->positionLigand(Bi);
-          cout << "#" << Bi->session->id << "\t Binding event at t=" << Bi->t << " ps  (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
+          lout << "#" << Bi->session->id << "\t Binding event at t=" << Bi->t << " ps  (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
           Bi->t = 0.;
           Bi->t_dwell = 0.;
           Bi->t_dwell_max = 0.;
@@ -171,10 +191,7 @@ void Model::integrate() {
         }
       }
 
-      // Session specific checks (escape, periodic wrapping, time limits, etc.)
-      Bi->session->checkLigand(Bi);
-
-    }
+    //}
   }
 
   cilk_sync;

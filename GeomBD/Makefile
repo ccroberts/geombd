@@ -1,6 +1,6 @@
 CC = icpc
 CFLAGS = -O3 -std=c++0x -I/usr/include/x86_64-linux-gnu/c++/4.8/
-#CFLAGS += -DDEBUG
+CFLAGS += -DDEBUG
 #CFLAGS += -DTOUCHING
 LDFLAGS = -lcilkrts -lmkl_blas95_ilp64 -lmkl_intel_ilp64 -lmkl_core -lmkl_intel_thread -lmkl_gf_ilp64 -openmp
 		

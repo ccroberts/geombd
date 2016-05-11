@@ -1,7 +1,7 @@
 #include "Main.h"
 #include "Strings.h"
 #include "Timer.h"
-#include "GAFF.h"
+#include "GBD2Parameters.h"
 
 bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
   int  opt;                                                                                                                                                                                                     
@@ -32,12 +32,12 @@ bool coordinateToGrid(double x, double y, double z, int *Gx, int *Gy, int *Gz, v
 
 
 void usage() {
-  printf("Usage: Gridder-ES -n NTHREADS(=max) -r [Receptor.PDBQE] (Optional: -q [[Ion+1](=0.001M),[Ion-1](=0.001M),[Ion+2](=0M),[Ion-2](=0M)] -p GRID_PADDING(=40A) -s GRID_SPACING(=0.375A))\n");
+  printf("Usage: Gridder-ES -o OUT.bpm -n NTHREADS(=max) -r [Receptor.PDBQE] (Optional: -q [[Ion+1](=0.001M),[Ion-1](=0.001M),[Ion+2](=0M),[Ion-2](=0M)] -p GRID_PADDING(=40A) -s GRID_SPACING(=0.375A))\n");
 }
 
 
 int main(int argc, char **argv) {
-  string datfn, ligfn, recfn, fldfn, stoken, token;
+  string datfn, outfn, ligfn, recfn, fldfn, stoken, token;
   double T = 298.;
   double diel_rec = 78.5;
   double ions_mono[2] = { 0.001, 0.001 };//Molar
@@ -45,6 +45,8 @@ int main(int argc, char **argv) {
   double grid_resolution = 0.375;
   double padding = 40., padding_sqr;
 
+  // receptor pdbqt
+  if(!getInputWithFlag(argc, argv, 'o', &outfn)) { usage(); return -1; }
   // receptor pdbqt
   if(!getInputWithFlag(argc, argv, 'r', &recfn)) { usage(); return -1; }
   // number of processors/threads
@@ -73,8 +75,8 @@ int main(int argc, char **argv) {
   }
 
   // Load receptor file
-  cout << "> Loading receptor PDBQT..." << endl;
-  ReceptorPDBQT *rec = new ReceptorPDBQT(recfn, NULL);
+  cout << "> Loading receptor PDBQE..." << endl;
+  ReceptorPDBQE *rec = new ReceptorPDBQE(recfn, NULL);
   cout << "> Receptor center: " << rec->center.x << ", " << rec->center.y << ", " << rec->center.z << endl;
   cout << "> Receptor minimum: " << rec->min.x << ", " << rec->min.y << ", " << rec->min.z << endl;
   cout << "> Receptor maximum coordinates: " << rec->max.x << ", " << rec->max.y << ", " << rec->max.z << endl;
@@ -89,7 +91,7 @@ int main(int argc, char **argv) {
   // Z vector storage for E calcs
   double *data_e = (double*)calloc(Npoints[2], sizeof(double));
   if(!data_e) { cout << "! Error: Could not allocate memory for grid calculation." << endl; return EXIT_FAILURE; }
-  ofstream bpm_e("e.bpm", ios::out | ios::binary);
+  ofstream bpm_e(outfn, ios::out | ios::binary);
   bpm_e.write((char*)&origin, sizeof(vertex));
   bpm_e.write((char*)&Npoints, sizeof(int)*3);
   bpm_e.write((char*)&grid_resolution, sizeof(double));
@@ -122,7 +124,7 @@ int main(int argc, char **argv) {
             double dy = (origin.y + (gy * grid_resolution)) - Rrec.y;
             double dz = (origin.z + (gz * grid_resolution)) - Rrec.z;
             double rr = sqrt(dx*dx + dy*dy + dz*dz);
-            if(rr <= radius + padding and rr >= 0.3*radius) ex[gx][gy][gz] = true;
+            if(rr <= radius + padding) ex[gx][gy][gz] = true;
           }
         }
       }
@@ -136,7 +138,8 @@ int main(int argc, char **argv) {
               + (/*2-*/4. * (ions_di[1] * 6.022e23 / 1e27));
   double kappa = sqrt((4. * M_PI * kC * ions) / (diel_rec * kB * T));
 
-  cout << "> Debye length: " << (1.0/kappa) << "A" << endl;
+  if(ions == 0) cout << "> Using standard Coulomb potential" << endl;
+  else cout << "> Debye length: " << (1.0/kappa) << "A" << endl;
 
   // relevant atom list
   vector<int> atoms;
@@ -173,9 +176,12 @@ int main(int argc, char **argv) {
           double dist_sqr = dr.x*dr.x + dr.y*dr.y + dr.z*dr.z;
           if(dist_sqr > padding_sqr) continue;
           double dist = sqrt(dist_sqr);
+          if(dist < 0.5*rec->radii[atoms[i]]) dist = 0.5*rec->radii[atoms[i]];
           // Electrostatic
-          double du_e = kC * rec->charges[atoms[i]] * exp(-dist * kappa) / (diel_rec * dist);
-          if(du_e > 1000.) du_e = 1000.;
+          double du_e;
+          if(ions == 0) du_e = kC * rec->charges[atoms[i]] / dist;
+                   else du_e = kC * rec->charges[atoms[i]] * exp(-dist * kappa) / (diel_rec * dist);
+          //if(du_e > 1000.) du_e = 1000.;
           data_e[nz] += du_e;
         }
       }

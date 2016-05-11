@@ -11,12 +11,13 @@ Body::Body() {
 
   t = 0.;
   dt = 0.100;
-  done = false;
-  bound = false;
 
   t_dwell = 0.;
   t_dwell_max = 0.;
   t_dwell_total = 0.;
+
+  r = 0.;
+  r_max = 0.;
 }
 
 
@@ -71,15 +72,10 @@ void Body::define() {
     R.y /= m;
     R.z /= m;
 
-    //moment of intertia
     vertex dr;
-    int Nreal = 0;
-
+    //moment of intertia
     for(int i=0; i < N; i++) {
       Bead *bi = beads[i];
-      if(bi->m != 0) {
-        Nreal++;
-      }
 
       dr.x = bi->R.x - R.x;
       dr.y = bi->R.y - R.y;
@@ -92,20 +88,64 @@ void Body::define() {
       if(sqrt(distSqr) + bi->r > r_max) r_max = sqrt(distSqr) + bi->r;
     }
 
-    r = sqrt(r / Nreal);
+    r = sqrt(r / N);
+    /*
+    double invSumRij = 0.;
+    //hydrodynamic radius
+    for(int i=0; i < N; i++) {
+      Bead *bi = beads[i];
+      for(int j=i+1; j < N; j++) {
+        Bead *bj = beads[j];
+        dr.x = bi->R.x - bj->R.x;
+        dr.y = bi->R.y - bj->R.y;
+        dr.z = bi->R.z - bj->R.z;
+        invSumRij += 1. / sqrt(dr.x*dr.x + dr.y*dr.y + dr.z*dr.z);
+      }
+    }
+
+    r = 1.0 / (invSumRij / (N * N));
+    */
   }
 
   if(model != NULL) {
     // Define Dco
     double Pl = (kB * model->T) / (6. * M_PI * model->viscosity);
     double Pa = (kB * model->T) / (8. * M_PI * model->viscosity);
-    D  = (Pl / r) + (Pl / model->receptorRoG);
-    Da = (Pa / pow(r, 3)) + (Pa / pow(model->receptorRoG, 3));
+    D  = (Pl / r) + (Pl / model->receptorRhyd);
+    Da = (Pa / pow(r, 3)) + (Pa / pow(model->receptorRhyd, 3));
   } else {
-    cout << "! Warning: You're using a Body object outside the context of a Model. Diffusion coefficients not calculated." << endl;
+    model->lout << "! Warning: You're using a Body object outside the context of a Model. Diffusion coefficients not calculated." << endl;
   }
 
-  //cout << ">> m=" << m << " I=" << I << " r=" << r << " r_max=" << r_max << " D=" << D << " Da=" << Da << endl;
+  //lout << ">> m=" << m << " I=" << I << " r=" << r << " r_max=" << r_max << " D=" << D << " Da=" << Da << endl;
+}
+
+
+void Body::save() {
+  _R.x = R.x;
+  _R.y = R.y;
+  _R.z = R.z;
+  _Ra.x = Ra.x;
+  _Ra.y = Ra.y;
+  _Ra.z = Ra.z;
+
+  for(int i=0; i < beads.size(); i++) {
+    beads[i]->saveR();
+  }
+}
+
+
+void Body::restore() {
+  R.x = _R.x;
+  R.y = _R.y;
+  R.z = _R.z;
+  Ra.x = _Ra.x;
+  Ra.y = _Ra.y;
+  Ra.z = _Ra.z;
+
+  for(int i=0; i < beads.size(); i++) {
+    beads[i]->restoreR();
+  }
 }
 
 
@@ -117,7 +157,7 @@ void Body::translate(double dx, double dy, double dz, bool suppressWarning) {
 
   double jump = dx*dx + dy*dy + dz*dz;
   if(jump > 25.0 and not suppressWarning) {
-    cout << "! Warning: Body translation greater than 5.0A in a single step." << endl;
+    model->lout << "! Warning: Body translation greater than 5.0A in a single step." << endl;
   }
 
   for(int i=0; i < N; i++) {
@@ -175,10 +215,6 @@ void writePDBBead(Bead *bi, unt index, char chain, fstream &outf) {
 
 void Body::writePDB(fstream &outf, char chain) {
   outf << "REMARK ";
-  if(bound) outf << " bound=true";
-  else if(done) outf << " done=true";
-  if(t_dwell_max > 0.) outf << " t_dwell_max=" << t_dwell_max;
-  if(t_dwell_total > 0.) outf << " t_dwell_total=" << t_dwell_total;
   outf << endl;
 
   for(int i=0; i < beads.size(); i++) {

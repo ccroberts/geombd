@@ -3,11 +3,12 @@
 
 #include "Main.h"
 #include "Body.h"
-#include "BinaryPotentialMap.h"
-#include "TypePotentialMap.h"
-#include "ESPotentialMap.h"
+#include "Grid.h"
+#include "Grid_Type.h"
+#include "Grid_EX.h"
+#include "Grid_ES.h"
+#include "Grid_D.h"
 #include "Session.h"
-#include "ExclusionMap.h"
 
 
  
@@ -26,6 +27,13 @@ class Model {
     void writeCoordinatesPQR();
 
   private:
+    void printRateConstant();
+
+  public:
+    string lfn;
+    fstream lout;
+
+  private:
     VSLStreamStatePtr *rngCPU;
     vertex *rand;
 
@@ -36,7 +44,7 @@ class Model {
   public:
     double T;
     double viscosity;
-    double receptorRoG;
+    double receptorRhyd;
 
     vector< Session* > sessions;
 
@@ -45,9 +53,10 @@ class Model {
     void populateLigands();
 
   public:
-    vector< ESPotentialMap* > esmaps;
-    vector< TypePotentialMap* > typemaps;
-    vector< ExclusionMap* > exmaps;
+    vector< Grid_ES* > esmaps;
+    vector< Grid_D* > dmaps;
+    vector< Grid_Type* > typemaps;
+    vector< Grid_EX* > exmaps;
 
     vertex center;
     double system_r;
@@ -56,6 +65,7 @@ class Model {
   public:
     int Nthreads;
     int Vtraj;
+    int Vprint;
     int active;
     int step;
     double dt_fine, dt_coarse;
@@ -63,15 +73,16 @@ class Model {
     void integrate();
 
   public:
-    Model();
-    Model(string inputfn, string outputfn);
-    ~Model();
+    double convergence;
 
   public:
+    Model();
+    Model(string inputfn, string outputfn, string logfn);
+    ~Model();
+
     bool done;
     void run();
 
-    void printRateConstant();
 };
 
 

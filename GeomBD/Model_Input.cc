@@ -2,9 +2,10 @@
 #include "Model.h"
 #include "Body.h"
 #include "Strings.h"
-#include "BinaryPotentialMap.h"
-#include "ESPotentialMap.h"
-#include "ExclusionMap.h"
+#include "Grid.h"
+#include "Grid_ES.h"
+#include "Grid_EX.h"
+#include "Grid_D.h"
 #include "Timer.h"
 #include "Session.h"
 #include "BindingCriteria.h"
@@ -25,45 +26,66 @@ void Model::parseInputFile() {
         parseNextValue(&line, &type);
         parseNextValue(&line, &token);
             if(type == "es") {
-              cout << "* Loading electrostatic potential grid \"" << token << "\"...";
-              cout.flush();
+              lout << "* Loading electrostatic potential grid \"" << token << "\"...";
+              lout.flush();
               Timer *t = new Timer();
               t->start();
-              esmaps.push_back(new ESPotentialMap(token, type));
+              esmaps.push_back(new Grid_ES(token, type));
               t->stop();
-              cout << " done. ";
-              t->print(&cout);
+              lout << " done. ";
+              t->print(&lout);
             } else {
               if(type == "ex") {
-                cout << "* Loading exclusion grid \"" << token << "\"...";
-                cout.flush();
+                lout << "* Loading exclusion grid \"" << token << "\"...";
+                lout.flush();
                 Timer *t = new Timer();
                 t->start();
-                exmaps.push_back(new ExclusionMap(token, "x"));
+                exmaps.push_back(new Grid_EX(token, "x"));
                 t->stop();
-                cout << " done. ";
-                t->print(&cout);
+                lout << " done. ";
+                t->print(&lout);
               } else {
-                cout << "* Loading LJ potential energy grid \"" << token << "\" for atom type \"" << type << "\"...";
-                cout.flush();
-                Timer *t = new Timer();
-                t->start();
-                typemaps.push_back(new TypePotentialMap(token, type));
-                t->stop();
-                cout << " done. ";
-                t->print(&cout);
+                if(type == "d") {
+                  lout << "* Loading desolvation potential grid \"" << token << "\"...";
+                  lout.flush();
+                  Timer *t = new Timer();
+                  t->start();
+                  dmaps.push_back(new Grid_D(token, type));
+                  t->stop();
+                  lout << " done. ";
+                  t->print(&lout);
+                } else {
+                  lout << "* Loading LJ potential energy grid \"" << token << "\" for atom type \"" << type << "\"...";
+                  lout.flush();
+                  Timer *t = new Timer();
+                  t->start();
+                  typemaps.push_back(new Grid_Type(token, type));
+                  t->stop();
+                  lout << " done. ";
+                  t->print(&lout);
+                }
               }
             }
+      }
+      if(token == "threads") {
+        parseNextValue(&line, &token);
+        __cilkrts_set_param("nworkers", token.c_str());
+        lout << "* Attempting to set number of threads to " << token << endl;
       }
       if(token == "temperature") {
         parseNextValue(&line, &token);
         T = stringToDouble(token);
-        cout << "* System temperature: " << T << endl;
+        lout << "* System temperature: " << T << endl;
       }
       if(token == "writetraj") {
         parseNextValue(&line, &token);
         Vtraj = stringToInt(token);
-        cout << "* Writing trajectory every " << Vtraj << " steps." << endl;
+        lout << "* Writing trajectory every " << Vtraj << " steps." << endl;
+      }
+      if(token == "writerate") {
+        parseNextValue(&line, &token);
+        Vprint = stringToInt(token);
+        lout << "* Writing association rate information to logfile every " << Vprint << " steps." << endl;
       }
       if(token == "timestep") {
         parseNextValue(&line, &token);
@@ -74,17 +96,23 @@ void Model::parseInputFile() {
         dt_scale_start = pow(stringToDouble(token), 2.); //SQUARED VALUE!
         parseNextValue(&line, &token);
         dt_scale_end = pow(stringToDouble(token), 2.);
-        cout << "* Timesteps: fine="<<dt_fine<<" ps, coarse=" <<dt_coarse << " ps, scaling from a radius of " << sqrt(dt_scale_start) << "A to a radius of " << sqrt(dt_scale_end) << "A." <<endl;
+        lout << "* Timesteps: fine="<<dt_fine<<" ps, coarse=" <<dt_coarse << " ps, scaling from a radius of " << sqrt(dt_scale_start) << "A to a radius of " << sqrt(dt_scale_end) << "A." <<endl;
       }
       if(token == "receptor") {
         parseNextValue(&line, &token);
-        parseReceptorPDBQE(token);
+        lout<< "* Receptor filename: " << token << endl;
+        if(file_exists(token)) {
+          parseReceptorPDBQE(token);
+        } else {
+          cout <<"! Receptor file does not exist! Exiting." << endl;
+          exit(-1);
+        }
       }
       if(token == "associate") {
         SessionRadial *sr = new SessionRadial(this);
         sessions.push_back(sr);
         sr->id = sessions.size();
-        cout << "* Defining session: Association" << endl;
+        lout << "* Defining session: Association" << endl;
       }
       if(token == "transfer") {
         parseNextValue(&line, &token); //"periodic" or "radial"
@@ -92,23 +120,28 @@ void Model::parseInputFile() {
           SessionAbsolutePeriodic *sap = new SessionAbsolutePeriodic(this);
           sessions.push_back(sap);
           sap->id = sessions.size();
-          cout << "* Defining session: fixed-volume interenzyme transfer" << endl;
+          lout << "* Defining session: fixed-volume interenzyme transfer" << endl;
         }
         if(token == "radial") {
           SessionAbsoluteRadial *sar = new SessionAbsoluteRadial(this);
           sessions.push_back(sar);
           sar->id = sessions.size();
-          cout << "* Defining session: interenzyme transfer with radial boundary" << endl;
+          lout << "* Defining session: interenzyme transfer with radial boundary" << endl;
         }
       }
 
       if(token == "ligand") {
-        //TODO: ADD A FUCKING FILE_EXISTS CHECK
         parseNextValue(&line, &token); //ligand filename
-        parseLigandPDBQE(token);
+        lout<< "* Ligand filename: " << token << endl;
+        if(file_exists(token)) {
+          parseLigandPDBQE(token);
+        } else {
+          cout <<"! Ligand file does not exist! Exiting." << endl;
+          exit(-1);
+        }
         parseNextValue(&line, &token); //Nreplicates
         sessions[sessions.size()-1]->Nreplicates = stringToInt(token);
-        cout<< " + Ligand replicates: " << token << endl;
+        lout<< "* Ligand replicates: " << token << endl;
       }
       if(token == "from") {
         parseNextValue(&line, &token);
@@ -123,18 +156,18 @@ void Model::parseInputFile() {
           sap->start.x = _fx;
           sap->start.y = _fy;
           sap->start.z = _fz;
-          cout << " + Ligand starting position: " << _fx << ", " << _fy << ", " << _fz << endl;
+          lout << "* Ligand starting position: " << _fx << ", " << _fy << ", " << _fz << endl;
         }
         if(sar) {
           sar->start.x = _fx;
           sar->start.y = _fy;
           sar->start.z = _fz;
-          cout << " + Ligand starting position: " << _fx << ", " << _fy << ", " << _fz << endl;
+          lout << "* Ligand starting position: " << _fx << ", " << _fy << ", " << _fz << endl;
         }
       }
       if(token == "bind") {
         BindingCriteria *bc = new BindingCriteria();
-        cout << " + Binding criteria (Single Ligand Atom): " << endl;
+        lout << "* Binding criteria (Single Ligand Atom): " << endl;
         parseNextValue(&line, &token);
         double bx = stringToDouble(token);
         parseNextValue(&line, &token);
@@ -146,12 +179,12 @@ void Model::parseInputFile() {
         parseNextValue(&line, &token);
         double r = stringToDouble(token);
         bc->addPair(bx, by, bz, laid-1, r);
-        cout << "    - LAID: " << laid << " within " << r << "A of (" << bx << " " << by << " " << bz << ")" << endl;
+        lout << "    - LAID: " << laid << " within " << r << "A of (" << bx << " " << by << " " << bz << ")" << endl;
         sessions[sessions.size()-1]->bindingCriteria.push_back(bc);
       }
       if(token == "bindand") {
         BindingCriteria *bc = new BindingCriteria();
-        cout << " + Binding criteria (AND): " << endl;
+        lout << "* Binding criteria (AND): " << endl;
         while(parseNextValue(&line, &token)) {
           double bx = stringToDouble(token);
           parseNextValue(&line, &token);
@@ -163,13 +196,13 @@ void Model::parseInputFile() {
           parseNextValue(&line, &token);
           double r = stringToDouble(token);
           bc->addPair(bx, by, bz, laid-1, r);
-          cout << "    - LAID: " << laid << " within " << r << "A of (" << bx << " " << by << " " << bz << ")" << endl;
+          lout << "    - LAID: " << laid << " within " << r << "A of (" << bx << " " << by << " " << bz << ")" << endl;
         }
         sessions[sessions.size()-1]->bindingCriteria.push_back(bc);
       }
       if(token == "bindor") {
         BindingCriteria *bc = new BindingCriteria(false);
-        cout << " + Binding criteria (OR): " << endl;
+        lout << " + Binding criteria (OR): " << endl;
         while(parseNextValue(&line, &token)) {
           double bx = stringToDouble(token);
           parseNextValue(&line, &token);
@@ -181,7 +214,7 @@ void Model::parseInputFile() {
           parseNextValue(&line, &token);
           double r = stringToDouble(token);
           bc->addPair(bx, by, bz, laid-1, r);
-          cout << "    - LAID: " << laid << " within " << r << "A of (" << bx << " " << by << " " << bz << ")" << endl;
+          lout << "    - LAID: " << laid << " within " << r << "A of (" << bx << " " << by << " " << bz << ")" << endl;
         }
         sessions[sessions.size()-1]->bindingCriteria.push_back(bc);
       }
@@ -197,7 +230,7 @@ void Model::parseInputFile() {
           sap->bounds.x = _bx;
           sap->bounds.y = _by;
           sap->bounds.z = _bz;
-          cout << " + Periodic boundary: " << _bx << ", " << _by << ", " << _bz << endl;
+          lout << " + Periodic boundary: " << _bx << ", " << _by << ", " << _bz << endl;
         }
       }
       if(token == "b") {
@@ -205,7 +238,7 @@ void Model::parseInputFile() {
         SessionRadial *sr = dynamic_cast< SessionRadial* >(sessions[sessions.size()-1]);
         if(sr) {
           sr->b = stringToDouble(token);
-          cout << " + Starting radius: " << sr->b << " A" << endl;
+          lout << " + Starting radius: " << sr->b << " A" << endl;
         }
       }
       if(token == "q") {
@@ -214,13 +247,13 @@ void Model::parseInputFile() {
         if(sr) {
           sr->q = stringToDouble(token);
           sr->q2 = sr->q * sr->q;
-          cout << " + Exit radius: " << sr->q << " A" << endl;
+          lout << " + Exit radius: " << sr->q << " A" << endl;
         }
         SessionAbsoluteRadial *sar = dynamic_cast< SessionAbsoluteRadial* >(sessions[sessions.size()-1]);
         if(sar) {
           sar->q = stringToDouble(token);
           sar->q2 = sar->q * sar->q;
-          cout << " + Exit radius: " << sar->q << " A" << endl;
+          lout << " + Exit radius: " << sar->q << " A" << endl;
         }
       }
       if(token == "time") {
@@ -228,7 +261,7 @@ void Model::parseInputFile() {
         if(sap) {
           parseNextValue(&line, &token);
           sap->t_max = stringToDouble(token);
-          cout << " + Time limit set to " << sap->t_max << " ps" << endl;
+          lout << " + Time limit set to " << sap->t_max << " ps" << endl;
         }
       }
     }
@@ -274,7 +307,7 @@ void Model::parseInputFile() {
   rmax = sqrt(dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
 
   system_r = max(rmin, rmax);
-  cout << "* System extends to a maximum distance of " << system_r << "A" << endl;
+  lout << "* System extends to a maximum distance of " << system_r << "A" << endl;
 }
 
 
@@ -314,11 +347,11 @@ void Model::parseReceptorPDBQE(string rfn) {
   cr[1] /= rx.size();
   cr[2] /= rx.size();
 
-  double rmsd = 0., dr = 0.;
-
   if(rx.size() == 1) {
-    receptorRoG = radii[0];
+    receptorRhyd = radii[0];
   } else {
+    double rmsd = 0., dr = 0.;
+
     for(int i=0; i < rx.size(); i++) {
       dr = rx[i] - cr[0];
       rmsd += dr * dr;
@@ -329,7 +362,21 @@ void Model::parseReceptorPDBQE(string rfn) {
     }
 
     rmsd /= rx.size();
-    receptorRoG = sqrt(rmsd);
+    receptorRhyd = sqrt(rmsd);
+    /*
+    double invSumRij = 0.;
+    //hydrodynamic radius
+    for(int i=0; i < rx.size(); i++) {
+      for(int j=i+1; j < rx.size(); j++) {
+        dr.x = rx[i] - rx[j];
+        dr.y = ry[i] - ry[j];
+        dr.z = rz[i] - rz[j];
+        invSumRij += 1. / sqrt(dr.x*dr.x + dr.y*dr.y + dr.z*dr.z);
+      }
+    }
+
+    receptorRhyd = 1.0 / (invSumRij / (rx.size()*rx.size()));
+    */
   }
 
 
@@ -406,7 +453,7 @@ void Model::parseLigandPDBQE(string lfn) {
       if(at == "Cl") { bj->r = 1.948; bj->m = 35.45; }
 
       if(bj->m == 0.) {
-        cout << "!!!! FATAL: Unassigned ligand bead type: " << at << endl;
+        lout << "!!!! FATAL: Unassigned ligand bead type: " << at << endl;
         exit(-1);
       }
       bj->R.x = x;
@@ -425,7 +472,7 @@ void Model::parseLigandPDBQE(string lfn) {
       }
     }
   }
-  cout << " + Loaded " << Nconfs << " ligand conformation" << endl;
+  lout << " + Loaded " << Nconfs << " ligand conformation" << endl;
 }
 
 

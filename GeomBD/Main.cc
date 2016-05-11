@@ -25,29 +25,26 @@ bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
 
 
 void usage() {
-  printf("Usage: GeomBD2 -f INPUTFILE -o TRAJECTORY.pqr [-n NTHREADS(=max)]\n");
+  printf("Usage: GeomBD2 -f INPUTFILE -o TRAJECTORY.pqr -l LOGFILE.log\n");
 }
 
 
-Model *model = NULL;
+static Model *model = NULL;
 
 void term(int signal) {
-  cout << "* Attempting clean exit..." << endl;
-  if(model) model->done = true;
+  if(model) {
+    model->done = true;
+  }
 }
 
 int main(int argc, char **argv) {
-  string stoken, fldfn, trjfn;
-  SimulationConfig sconfig;
+  string stoken, fldfn, trjfn, logfn;
 
   srand(time(NULL));
 
   if(!getInputWithFlag(argc, argv, 'f', &fldfn)) { usage(); return -1; }
   if(!getInputWithFlag(argc, argv, 'o', &trjfn)) { usage(); return -1; }
-  if(getInputWithFlag(argc, argv, 'n', &stoken)) {
-    __cilkrts_set_param("nworkers", stoken.c_str());
-    cout << "* Attempting to set number of threads to " << stoken << endl;
-  }
+  if(!getInputWithFlag(argc, argv, 'l', &logfn)) { usage(); return -1; }
 
   // Exit gracefully if possible
   struct sigaction action;
@@ -58,14 +55,14 @@ int main(int argc, char **argv) {
   sigaction(SIGQUIT, &action, NULL);
 
   // Create model
-  model = new Model(fldfn, trjfn);
+  model = new Model(fldfn, trjfn, logfn);
 
-  cout << "* Starting simulation with " << model->Nthreads << " threads" << endl;
+  model->lout << "* Starting simulation with " << model->Nthreads << " threads" << endl;
   Timer *timer = new Timer();
   timer->start();
   model->run();
   timer->stop();
-  timer->print(&cout);
+  timer->print(&model->lout);
 
 
   delete timer;

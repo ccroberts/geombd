@@ -12,8 +12,10 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <queue>
 #include <algorithm> 
 #include <sys/time.h>
+#include <sys/stat.h>
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
 #include <cilk/reducer_opadd.h>
@@ -46,6 +48,11 @@ using namespace std;
 
 inline double random(double rangeStart, double rangeEnd) {
   return (((double)rand() / (double)INT_MAX) * (rangeEnd - rangeStart)) + rangeStart;
+}
+
+inline bool file_exists(const string& fn) {
+  struct stat buffer;   
+  return (stat (fn.c_str(), &buffer) == 0); 
 }
 
 

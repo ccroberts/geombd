@@ -1,11 +1,11 @@
-#ifndef _ExclusionMap_h_
-#define _ExclusionMap_h_
+#ifndef _Grid_EX_h_
+#define _Grid_EX_h_
 
 #include "Main.h"
 #include "Strings.h"
 
  
-class ExclusionMap {
+class Grid_EX {
   friend class Model;
   protected:
     bool header = true,
@@ -22,7 +22,7 @@ class ExclusionMap {
     string type;
 
   public:
-    ExclusionMap(string bpm_filename, string atomtype) {
+    Grid_EX(string bpm_filename, string atomtype) {
       type = atomtype;
 
       ifstream fd(bpm_filename.c_str(), ios::in | ios::binary);
@@ -59,7 +59,7 @@ class ExclusionMap {
 
     }
 
-    virtual ~ExclusionMap() {
+    virtual ~Grid_EX() {
       for(int nx=0; nx < N[0]; nx++) {
         for(int ny=0; ny < N[1]; ny++) {
           free(data[nx][ny]);

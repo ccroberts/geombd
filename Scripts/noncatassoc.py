@@ -50,9 +50,9 @@ for filename in sys.argv[1:]:
   for i in range(len(x)):
     X = x[i]
     Y = y[i]
-    print str('%30s' % filename), ':: avg_total=', Y[-1], '\tavg_nca=', sum(B)/A, '\tmax =', max(B), '\tstdev=', np.std(B), '\tNnca=', A, '\tN=', num, '\t%nca=', 100. * float(A)/float(num)
+    print str('%30s' % filename), ':: avg_total=', Y[-1], '\tavg_nca=', sum(B)/A, '\tmax =', max(B), '\tstdev=', np.std(B), '\tstderr=', (np.std(B) / math.sqrt(A)),'\tNnca=', A, '\tN=', num, '\t%nca=', 100. * float(A)/float(num)
     #label = 'Session %d Total - t = %.1e +/- %.1f%%' % (i+1, Y[-1], pow(A, -0.5) * 100.)
-    #plt.plot(X, Y, label=label)
+    #plt.plot(X, Y)#, label=label)
 
 '''
 plt.legend(loc='upper right', prop={'size':12})
@@ -62,7 +62,6 @@ if yrange != None:
   plt.ylim(yrange)
 
 plt.title(sys.argv[1])
-plt.show()
 #fig = matplotlib.pyplot.gcf()
 #fig.savefig(sys.argv[2], dpi=300)
 '''
