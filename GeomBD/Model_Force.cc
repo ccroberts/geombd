@@ -56,9 +56,11 @@ void Model::integrate() {
               if(fabs(E) > 0) {
                 associated = true;
               }
+              /*
               bi->F.x += dF.x;
               bi->F.y += dF.y;
               bi->F.z += dF.z;
+              */
             }
           }
         }
