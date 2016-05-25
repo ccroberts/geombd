@@ -123,6 +123,11 @@ void SessionRadial::printRateConstant() {
   model->lout << "q=" << q << " ";
   model->lout << "Davg=" << Davg << " ";
   model->lout << endl;
+
+  if(model->max_simulations > 0 and Ndone >= model->max_simulations) {
+    cout << "> Maximum simulations reached. Exiting." << endl;
+    model->done = true;
+  }
 }
 
 
@@ -185,6 +190,11 @@ void SessionAbsolutePeriodic::printRateConstant() {
 
   printf("   (session %d)   rate = %.5e Ms⁻¹ (Nbind=%d Ndone=%d β=%.4f C=%.1f k=%.5e s⁻¹ tavg=%.5e Davg=%.5e)", id, rate, Nbind.get_value(), Ndone, B, C, B / (tavg * 1e-12), tavg, Davg);
   model->lout << endl;
+
+  if(model->max_simulations > 0 and Ndone >= model->max_simulations) {
+    cout << "> Maximum simulations reached. Exiting." << endl;
+    model->done = true;
+  }
 }
 
 
@@ -256,6 +266,11 @@ void SessionAbsoluteRadial::printRateConstant() {
   model->lout << "q=" << q << " ";
   model->lout << "Davg=" << Davg << " ";
   model->lout << endl;
+
+  if(model->max_simulations > 0 and Ndone >= model->max_simulations) {
+    cout << "> Maximum simulations reached. Exiting." << endl;
+    model->done = true;
+  }
 }
 
 

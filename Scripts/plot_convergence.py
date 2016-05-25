@@ -59,7 +59,7 @@ for i in range(len(x)):
       label = 'Session %d BS %d' % (i+1, j-1)
       plt.plot(x[i][j], y[i][j], label=label)
 
-plt.legend(loc='upper right', prop={'size':12})
+#plt.legend(loc='upper right', prop={'size':12})
 plt.ylabel('Bound Fraction', fontsize=16)
 plt.xlabel('Completed Substrate Replicate Simulations', fontsize=16)
 if yrange != None:
@@ -68,7 +68,7 @@ if yrange != None:
 #plt.xticks(fontsize=14)
 #plt.tight_layout();
 
-plt.title(sys.argv[1])
+#plt.title(sys.argv[1])
 #plt.show()
 fig = matplotlib.pyplot.gcf()
 fig.savefig(sys.argv[2], dpi=300)

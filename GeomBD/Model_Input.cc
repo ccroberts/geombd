@@ -82,7 +82,7 @@ void Model::parseInputFile() {
         Vtraj = stringToInt(token);
         lout << "* Writing trajectory every " << Vtraj << " steps." << endl;
       }
-      if(token == "writerate") {
+      if(token == "writelog") {
         parseNextValue(&line, &token);
         Vprint = stringToInt(token);
         lout << "* Writing association rate information to logfile every " << Vprint << " steps." << endl;
@@ -263,6 +263,11 @@ void Model::parseInputFile() {
           sap->t_max = stringToDouble(token);
           lout << " + Time limit set to " << sap->t_max << " ps" << endl;
         }
+      }
+      if(token == "maxsims") {
+        parseNextValue(&line, &token);
+        max_simulations = stringToInt(token);
+        lout << " + Setting maximum number of completed replicate simulations to " << max_simulations << "." << endl;
       }
     }
   }
