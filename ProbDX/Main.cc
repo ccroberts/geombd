@@ -1,6 +1,6 @@
 #include "Main.h"
 #include "Strings.h"
-#include "../Gridder/GAFF.h"
+#include "../Gridder/GBD2Parameters.h"
 #include "Timer.h"
 
 bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
@@ -32,7 +32,7 @@ bool coordinateToGrid(double x, double y, double z, int *Gx, int *Gy, int *Gz, v
 
 
 void usage() {
-  printf("Usage: gridder -r [Receptor.PDBQT] -t [Trajectory.PDB] -o [Output.DX] (Optional: -p GRID_PADDING(=10A) -s GRID_SPACING(=1.000A))\n");
+  printf("Usage: gridder -r [Receptor.PDBQE] -t [Trajectory.PDB] -o [Output.DX] (Optional: -p GRID_PADDING(=10A) -s GRID_SPACING(=1.000A))\n");
 }
 
 
@@ -62,8 +62,8 @@ int main(int argc, char **argv) {
   }
 
   // Load receptor file
-  cout << "> Loading receptor PDBQT..." << endl;
-  ReceptorPDBQT *rec = new ReceptorPDBQT(recfn, NULL);
+  cout << "> Loading receptor PDBQE..." << endl;
+  ReceptorPDBQE *rec = new ReceptorPDBQE(recfn, NULL);
   cout << "> Receptor center: " << rec->center.x << ", " << rec->center.y << ", " << rec->center.z << endl;
   cout << "> Receptor minimum: " << rec->min.x << ", " << rec->min.y << ", " << rec->min.z << endl;
   cout << "> Receptor maximum coordinates: " << rec->max.x << ", " << rec->max.y << ", " << rec->max.z << endl;

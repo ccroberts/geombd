@@ -20,6 +20,10 @@ Model::Model() {
   dt_coarse = 10.000;
   dt_scale_start = 100.;
   dt_scale_end = 500.;
+
+  //ending conditions
+  convergence = 0.;
+  max_simulations = -1;
 }
 
 

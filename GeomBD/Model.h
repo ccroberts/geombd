@@ -74,6 +74,7 @@ class Model {
 
   public:
     double convergence;
+    int max_simulations;
 
   public:
     Model();
