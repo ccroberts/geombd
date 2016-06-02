@@ -38,6 +38,7 @@ class GBD2Parameters {
     */
 
     PairMap lj_map;
+    PairMap slj_map;
 
   public:
     GBD2Parameters(string filename) {
@@ -97,10 +98,11 @@ class GBD2Parameters {
       }
 
       lj_map = PairMap(types.size());
+      slj_map = PairMap(types.size());
 
       for(int i=0; i < types.size(); i++) {
         for(int j=0; j < i+1; j++) {
-          pair_parameter parm;
+          pair_parameter parm, sparm;
 
           double rij = 0.5 * (Rii[i] + Rii[j]);
           double eij = sqrt(epsii[i] * epsii[j]);
@@ -110,8 +112,15 @@ class GBD2Parameters {
             eij,
             rij
           };
-
           lj_map[i].push_back(parm);
+
+          sparm = {
+            /*A*/eij * pow(rij, 12),
+            /*B*/2. * eij * pow(rij, 6),
+            eij,
+            rij
+          };
+          slj_map[i].push_back(sparm);
         }
       }
     }

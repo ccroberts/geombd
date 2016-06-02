@@ -40,8 +40,6 @@ void term(int signal) {
 int main(int argc, char **argv) {
   string stoken, fldfn, trjfn, logfn;
 
-  cout << "!!WARNING: This version of GeomBD2 was compiled to include LJ maps without imposing forces in order to calculate residence times." << endl;
-
   srand(time(NULL));
 
   if(!getInputWithFlag(argc, argv, 'f', &fldfn)) { usage(); return -1; }

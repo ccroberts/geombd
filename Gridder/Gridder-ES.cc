@@ -176,12 +176,10 @@ int main(int argc, char **argv) {
           double dist_sqr = dr.x*dr.x + dr.y*dr.y + dr.z*dr.z;
           if(dist_sqr > padding_sqr) continue;
           double dist = sqrt(dist_sqr);
-          if(dist < 0.5*rec->radii[atoms[i]]) dist = 0.5*rec->radii[atoms[i]];
           // Electrostatic
           double du_e;
           if(ions == 0) du_e = kC * rec->charges[atoms[i]] / dist;
                    else du_e = kC * rec->charges[atoms[i]] * exp(-dist * kappa) / (diel_rec * dist);
-          //if(du_e > 1000.) du_e = 1000.;
           data_e[nz] += du_e;
         }
       }

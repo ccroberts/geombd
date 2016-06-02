@@ -150,20 +150,23 @@ void Body::restore() {
 
 
  
-void Body::translate(double dx, double dy, double dz, bool suppressWarning) {
+bool Body::translate(double dx, double dy, double dz, bool suppressWarning) {
   R.x += dx;
   R.y += dy;
   R.z += dz;
-
-  double jump = dx*dx + dy*dy + dz*dz;
-  if(jump > 25.0 and not suppressWarning) {
-    model->lout << "! Warning: Body translation greater than 5.0A in a single step." << endl;
-  }
 
   for(int i=0; i < N; i++) {
     Bead *bi = beads[i];
     bi->translate(dx, dy, dz);
   }
+
+  double jump = dx*dx + dy*dy + dz*dz;
+  if(jump > 25.0 and not suppressWarning) {
+    model->lout << "! Warning: Body translation greater than 5.0A in a single step." << endl;
+    return false;
+  }
+
+  return true;
 }
 
 
