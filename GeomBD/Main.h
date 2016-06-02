@@ -66,6 +66,14 @@ struct vertex {
   double z;
 };
 
+inline double vertex_sqmagnitude(vertex &v) {
+  return (v.x*v.x + v.y*v.y + v.z*v.z);
+}
+
+inline double vertex_magnitude(vertex &v) {
+  return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+}
+
 enum SimulationConfig {
   CONFIGURATION_RADIAL,
   CONFIGURATION_ABSOLUTE_RADIAL,

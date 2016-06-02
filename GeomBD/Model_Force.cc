@@ -29,7 +29,7 @@ void Model::integrate() {
         
         if(bi->q != 0.) {
           for(int es=0; es < esmaps.size(); es++) {
-            if(esmaps[es]->force(&bi->R, &dF, bi->q, &E)) {
+            if(esmaps[es]->approximate_force(&bi->R, &dF, &E, 2, bi->q)) {
               onGrid = true;
               bi->F.x += dF.x;
               bi->F.y += dF.y;
@@ -37,7 +37,7 @@ void Model::integrate() {
             }
           }
           for(int ds=0; ds < dmaps.size(); ds++) {
-            if(dmaps[ds]->force(&bi->R, &dF, bi->q, &E)) {
+            if(dmaps[ds]->approximate_force(&bi->R, &dF, &E, 2, fabs(bi->q))) {
               onGrid = true;
               bi->F.x += dF.x;
               bi->F.y += dF.y;
@@ -51,16 +51,14 @@ void Model::integrate() {
 
         for(int tmap=0; tmap < typemaps.size(); tmap++) {
           if(typemaps[tmap]->type == bi->type) {
-            if(typemaps[tmap]->approximate_force(&bi->R, &dF, &E, 0.01)) {
+            if(typemaps[tmap]->approximate_force(&bi->R, &dF, &E, 2, 1.0)) {
               onGrid = true;
               if(fabs(E) > 0) {
                 associated = true;
               }
-              /*
               bi->F.x += dF.x;
               bi->F.y += dF.y;
               bi->F.z += dF.z;
-              */
             }
           }
         }
@@ -108,11 +106,13 @@ void Model::integrate() {
         if(radius2 <= dt_scale_start) dt = dt_fine;
         if(radius2 >= dt_scale_end) dt = dt_coarse;
       }
-      /*if(onGrid) {
-        dt = min(dt_fine / (sqrt(Bi->F.x*Bi->F.x + Bi->F.y*Bi->F.y + Bi->F.z*Bi->F.z) / 2.), dt_fine);
-      }*/
+      if(onGrid) {
+        double mf = vertex_magnitude(Bi->F);
+        double dt_f = /*delta*/0.5 * kB * T / (Bi->D * mf);
+        dt = min(dt_fine, dt_f);
+      }
 
-      // Backup coordinates
+      // Backup coordinates in case of interpenetration
       Bi->save();
 
       // Integrate
@@ -126,7 +126,9 @@ void Model::integrate() {
       dR.x = (A * Si->x) + (B * Bi->F.x);
       dR.y = (A * Si->y) + (B * Bi->F.y);
       dR.z = (A * Si->z) + (B * Bi->F.z);
-      Bi->translate(dR.x, dR.y, dR.z);
+      if(! Bi->translate(dR.x, dR.y, dR.z)) {
+        cout << "this shouldn't happen (5A step" << endl;
+      }
 
       double C = sqrt(2 * Bi->Da * dt);
       double D = Bi->Da * dtOVERkBT;

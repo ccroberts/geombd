@@ -4,6 +4,9 @@ CFLAGS = -O3 -std=c++0x -I/usr/include/x86_64-linux-gnu/c++/4.8/ -openmp -I../Ge
 #CFLAGS += -DTOUCHING
 LDFLAGS = -lcilkrts -openmp
 		
+O_gridtool = GridTool.o 
+X_gridtool = ../bin/GridTool
+		
 O_gridder = Gridder-LJ.o 
 X_gridder = ../bin/Gridder-LJ
 		
@@ -25,7 +28,10 @@ X_bpm_info = ../bin/Gridder-bpm_info
 O_griddex = Gridder-EX.o
 X_griddex = ../bin/Gridder-EX
 
-all : gridder griddes griddex griddd bpm2dx spm2dx bpm_info
+all : gridtool gridder griddes griddex griddd bpm2dx spm2dx bpm_info
+
+gridtool: $(O_gridtool) $(C_gridtool)
+	$(CC) $(CFLAGS) $(O_gridtool) $(C_gridtool) -o $(X_gridtool) $(LDFLAGS)
 
 gridder: $(O_gridder) $(C_gridder)
 	$(CC) $(CFLAGS) $(O_gridder) $(C_gridder) -o $(X_gridder) $(LDFLAGS)

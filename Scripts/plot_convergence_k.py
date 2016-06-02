@@ -44,10 +44,14 @@ for line in open(sys.argv[1], 'r'):
     b[sid].append([])
   if line.startswith("   (session") and sp[1][-1] == ')':
     sid = int(sp[1][:-1]) - 1
-    kon = float(sp[4])
-    bnd = float(sp[6].split('=')[1])
-    num = float(sp[7].split('=')[1])
-    bta = bnd/num
+    try:
+      kon = float(sp[4])
+      bnd = float(sp[6].split('=')[1])
+      num = float(sp[7].split('=')[1])
+    except:
+      kon = 0
+      bnd = 0
+      num = 0
     x[sid][0].append(num)
     y[sid][0].append(kon)
     b[sid][0].append(bnd)
