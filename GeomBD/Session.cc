@@ -74,7 +74,7 @@ void SessionRadial::positionLigand(Body *bi) {
   Q.z *= b / l;
  
   bi->center();
-  bi->translate(model->center.x + Q.x, model->center.y + Q.y, model->center.z + Q.z, true);
+  bi->translate(model->center.x + Q.x, model->center.y + Q.y, model->center.z + Q.z);
   bi->rotate(random(0., M_PI), random(0., M_PI), random(0., M_PI));
 
 }
@@ -163,7 +163,7 @@ SessionAbsolutePeriodic::SessionAbsolutePeriodic(Model *m) : Session(m, CONFIGUR
 
 void SessionAbsolutePeriodic::positionLigand(Body *bi) {
   bi->center();
-  bi->translate(start.x, start.y, start.z, true);
+  bi->translate(start.x, start.y, start.z);
 }
 
 void SessionAbsolutePeriodic::printRateConstant() {
@@ -199,12 +199,12 @@ void SessionAbsolutePeriodic::printRateConstant() {
 
 
 void SessionAbsolutePeriodic::checkLigand(Body *bi) {
-  if(bi->R.x > 0.5*bounds.x)  { bi->translate(-bounds.x, 0., 0., true); }
-  if(bi->R.y > 0.5*bounds.y)  { bi->translate(0., -bounds.y, 0., true); }
-  if(bi->R.z > 0.5*bounds.z)  { bi->translate(0., 0., -bounds.z, true); }
-  if(bi->R.x < -0.5*bounds.x) { bi->translate(bounds.x, 0., 0., true);  }
-  if(bi->R.y < -0.5*bounds.y) { bi->translate(0., bounds.y, 0., true);  }
-  if(bi->R.z < -0.5*bounds.z) { bi->translate(0., 0., bounds.z, true);  }
+  if(bi->R.x > 0.5*bounds.x)  { bi->translate(-bounds.x, 0., 0.); }
+  if(bi->R.y > 0.5*bounds.y)  { bi->translate(0., -bounds.y, 0.); }
+  if(bi->R.z > 0.5*bounds.z)  { bi->translate(0., 0., -bounds.z); }
+  if(bi->R.x < -0.5*bounds.x) { bi->translate(bounds.x, 0., 0.);  }
+  if(bi->R.y < -0.5*bounds.y) { bi->translate(0., bounds.y, 0.);  }
+  if(bi->R.z < -0.5*bounds.z) { bi->translate(0., 0., bounds.z);  }
 
   if(bi->t >= t_max) {
     //bi->done = true;
@@ -229,7 +229,7 @@ SessionAbsoluteRadial::SessionAbsoluteRadial(Model *m) : Session(m, CONFIGURATIO
 
 void SessionAbsoluteRadial::positionLigand(Body *bi) {
   bi->center();
-  bi->translate(start.x, start.y, start.z, true );
+  bi->translate(start.x, start.y, start.z);
 }
 
 

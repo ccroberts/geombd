@@ -98,18 +98,34 @@ void Model::integrate() {
       dr[1] = Bi->R.y - center.y;
       dr[2] = Bi->R.z - center.z;
       radius2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
-      double dt;
-      if(radius2 > dt_scale_start and radius2 < dt_scale_end) {
-        double s = (radius2 - dt_scale_start) / (dt_scale_end - dt_scale_start);
-        dt = dt_fine + s * (dt_coarse - dt_fine);
-      } else {
-        if(radius2 <= dt_scale_start) dt = dt_fine;
-        if(radius2 >= dt_scale_end) dt = dt_coarse;
-      }
       if(onGrid) {
-        double mf = vertex_magnitude(Bi->F);
-        double dt_f = /*delta*/0.5 * kB * T / (Bi->D * mf);
-        dt = min(dt_fine, dt_f);
+        double r_max = 0.5;
+        /*
+        double mF = vertex_magnitude(Bi->F);
+        Bi->dt = min(dt_fine, (r_max*kB*T)/(Bi->D * mF));
+        if(Bi->dt == 0. or Bi->dt > dt_fine) Bi->dt = dt_fine;//for first time adaptation
+        */
+        double mF = vertex_magnitude(Bi->F);
+        if(fabs(mF - Bi->mF) > 2. and Bi->dt > 0.0001) {
+          Bi->restore();
+          Bi->dt /= 2.0;
+          if(Bi->dt < 0.0001) Bi->dt = 0.0001;
+        } else {
+          Bi->mF = mF;
+          if(Bi->dt < dt_fine) {
+            Bi->dt = min(dt_fine, Bi->dt * 2.0);
+          } else {
+            Bi->dt = dt_fine;
+          }
+        }
+      } else {
+        if(radius2 > dt_scale_start and radius2 < dt_scale_end) {
+          double s = (radius2 - dt_scale_start) / (dt_scale_end - dt_scale_start);
+          Bi->dt = dt_fine + s * (dt_coarse - dt_fine);
+        } else {
+          if(radius2 <= dt_scale_start) Bi->dt = dt_fine;
+          if(radius2 >= dt_scale_end) Bi->dt = dt_coarse;
+        }
       }
 
       // Backup coordinates in case of interpenetration
@@ -120,8 +136,8 @@ void Model::integrate() {
       vertex *Sai = &rand[ligands.size()+il];
 
       vertex dR, dRa;
-      double A = sqrt(2. * Bi->D * dt);
-      double dtOVERkBT = dt / (kB * T);
+      double A = sqrt(2. * Bi->D * Bi->dt);
+      double dtOVERkBT = Bi->dt / (kB * T);
       double B = Bi->D * dtOVERkBT;
       dR.x = (A * Si->x) + (B * Bi->F.x);
       dR.y = (A * Si->y) + (B * Bi->F.y);
@@ -130,7 +146,7 @@ void Model::integrate() {
         cout << "this shouldn't happen (5A step" << endl;
       }
 
-      double C = sqrt(2 * Bi->Da * dt);
+      double C = sqrt(2 * Bi->Da * Bi->dt);
       double D = Bi->Da * dtOVERkBT;
       dRa.x = (C * Sai->x) + (D * Bi->Fa.x);
       dRa.y = (C * Sai->y) + (D * Bi->Fa.y);
@@ -141,30 +157,27 @@ void Model::integrate() {
       bool penetrating = false;
       for(int i=0; i < Bi->beads.size(); i++) {
         Bead *bi = Bi->beads[i];
-        
         for(int ex=0; ex < exmaps.size(); ex++) {
           if(exmaps[ex]->value(&bi->R) > 0) {
             penetrating = true;
             break;
           }
         }
-
-        if(penetrating) break;
+        if(penetrating) {
+        }
       }
+      // Excluded step, do not increment time
       if(penetrating) {
         Bi->restore();
-        //Bi->translate(-dR.x, -dR.y, -dR.z);
-        //Bi->rotate(-dRa.x, -dRa.y, -dRa.z);
         continue;
       }
 
-      // Increment time
-      Bi->t += dt;
+      // Increment time, record dwell-time
+      Bi->t += Bi->dt;
 
-      // Record dwell-time
       if(onGrid and associated) {
-        Bi->t_dwell += dt;
-        Bi->t_dwell_total += dt;
+        Bi->t_dwell += Bi->dt;
+        Bi->t_dwell_total += Bi->dt;
         if(Bi->t_dwell > Bi->t_dwell_max) Bi->t_dwell_max = Bi->t_dwell;
       } else {
         if(Bi->t_dwell > 0.) {
@@ -180,8 +193,6 @@ void Model::integrate() {
       for(int bs=0; bs < Bi->session->bindingCriteria.size(); bs++) {
         BindingCriteria* bc = Bi->session->bindingCriteria[bs];
         if(bc->checkBinding(Bi)) {
-          //Bi->bound = true;
-          //Bi->done = true;
           *Bi->session->Nbind += 1;
           *Bi->session->t_avgt += Bi->t;
           *bc->Nbind += 1;
@@ -195,7 +206,6 @@ void Model::integrate() {
         }
       }
 
-    //}
   }
 
   cilk_sync;

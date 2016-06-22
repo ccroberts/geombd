@@ -1,10 +1,17 @@
-#include <fstream>
-#include <cstdio>
-#include <cstdlib>
-using namespace std;
+#include "Gridder.h"
+
+void usage() {
+  printf("Usage: bpm2dx -i [IN.BPM] -o [OUT.DX]\n");
+}
 
 int main(int argc, char **argv) {
-  ifstream fd(argv[1], ios::in | ios::binary);
+  string Arg_InFN, Arg_OutFN;
+
+  // Obtain command line input
+  if(!getInputWithFlag(argc, argv, 'i', &Arg_InFN)) { usage(); return -1; }
+  if(!getInputWithFlag(argc, argv, 'o', &Arg_OutFN)) { usage(); return -1; }
+
+  ifstream fd(Arg_InFN, ios::in | ios::binary);
   double origin[3];
   int Npoints[3];
   int NpointsT = 0;
@@ -39,7 +46,7 @@ int main(int argc, char **argv) {
   printf("> Starting to write OpenDX potential map...\n");
   // output opendx data
   FILE *fdo;
-  fdo = fopen(argv[2], "w");
+  fdo = fopen(Arg_OutFN.c_str(), "w");
   fprintf(fdo, "object 1 class gridpositions counts %d %d %d\n", Npoints[0], Npoints[1], Npoints[2]);
   fprintf(fdo, "origin %12.6e %12.6e %12.6e\n", origin[0], origin[1], origin[2]);
   fprintf(fdo, "delta %12.6e %12.6e %12.6e\n", grid_resolution, 0., 0.);

@@ -1,199 +1,159 @@
-#include "Main.h"
-#include "Strings.h"
-#include "Timer.h"
-#include "GBD2Parameters.h"
-
-bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
-  int  opt;                                                                                                                                                                                                     
-  bool bopt = false;
-  char gopt[2] = { flag, ':' };
-
-  for(int i=1; i < argc; i++) {
-    if(argv[i][0] == '-' && argv[i][1] == flag) {
-      if(argv[i+1][0] != '-') {
-        *value = argv[i+1];
-        bopt = true;
-        i++;
-        break;
-      }
-    }
-  }
-
-  return bopt;
-}
-
-
-bool coordinateToGrid(double x, double y, double z, int *Gx, int *Gy, int *Gz, vertex *origin, double delta) {
-  *Gx = (int)floor(((x-origin->x)/delta) + 0.5);
-  *Gy = (int)floor(((y-origin->y)/delta) + 0.5);
-  *Gz = (int)floor(((z-origin->z)/delta) + 0.5);
-  return true;
-}
+#include "Gridder.h"
 
 
 void usage() {
-  printf("Usage: Gridder-ES -o OUT.bpm -n NTHREADS(=max) -r [Receptor.PDBQE] (Optional: -q [[Ion+1](=0.001M),[Ion-1](=0.001M),[Ion+2](=0M),[Ion-2](=0M)] -p GRID_PADDING(=40A) -s GRID_SPACING(=0.375A))\n");
+  printf("Usage: Gridder-ES -d [FF.gbdp] -r [Receptor.PQR] -l [Ligand.PQR] -o [Output Prefix] -n [N_THREADS] (-p [Padding=40A] -s [Spacing=0.5A] -q [[Ion+1](=0.001M),[Ion-1](=0.001M),[Ion+2](=0M),[Ion-2](=0M)])\n");
 }
 
 
 int main(int argc, char **argv) {
-  string datfn, outfn, ligfn, recfn, fldfn, stoken, token;
-  double T = 298.;
-  double diel_rec = 78.5;
-  double ions_mono[2] = { 0.001, 0.001 };//Molar
-  double ions_di[2] = { 0., 0. };
-  double grid_resolution = 0.375;
-  double padding = 40., padding_sqr;
+  string Arg, Arg_Q, Arg_ParamFN, Arg_ReceptorFN, Arg_LigandFN, Arg_OutputPrefix;
+  int Arg_Padding = 40, Arg_Padding2 = 40*40;
+  double Arg_GridSpacing = 0.5;
+  double Arg_Ions[4] = { 0.001, 0.001, 0.0, 0.0 };//Molar
 
-  // receptor pdbqt
-  if(!getInputWithFlag(argc, argv, 'o', &outfn)) { usage(); return -1; }
-  // receptor pdbqt
-  if(!getInputWithFlag(argc, argv, 'r', &recfn)) { usage(); return -1; }
-  // number of processors/threads
-  if(getInputWithFlag(argc, argv, 'n', &stoken)) {
-    __cilkrts_set_param("nworkers", stoken.c_str());
+  // Obtain command line input
+  if(!getInputWithFlag(argc, argv, 'd', &Arg_ParamFN)) { usage(); return -1; }
+  if(!getInputWithFlag(argc, argv, 'r', &Arg_ReceptorFN)) { usage(); return -1; }
+  if(!getInputWithFlag(argc, argv, 'l', &Arg_LigandFN)) { usage(); return -1; }
+  if(getInputWithFlag(argc, argv, 'n', &Arg)) {
+    __cilkrts_set_param("nworkers", Arg.c_str());
   }
-  // ion concentrations
-  if(getInputWithFlag(argc, argv, 'q', &stoken)) {
-    parseNextValue(&stoken, &token);
-    ions_mono[0] = stringToDouble(token);
-    parseNextValue(&stoken, &token);
-    ions_mono[1] = stringToDouble(token);
-    parseNextValue(&stoken, &token);
-    ions_di[0] = stringToDouble(token);
-    parseNextValue(&stoken, &token);
-    ions_di[1] = stringToDouble(token);
+  if(getInputWithFlag(argc, argv, 'p', &Arg)) {
+    Arg_Padding = stringToDouble(Arg);
+    Arg_Padding2 = pow(Arg_Padding, 2);
   }
-  // grid padding
-  if(getInputWithFlag(argc, argv, 'p', &stoken)) {
-    padding = stringToDouble(stoken);
+  if(getInputWithFlag(argc, argv, 's', &Arg)) {
+    Arg_GridSpacing = stringToDouble(Arg);
   }
-  padding_sqr = padding * padding;
-  // grid spacing
-  if(getInputWithFlag(argc, argv, 's', &stoken)) {
-    grid_resolution = stringToDouble(stoken);
+  if(getInputWithFlag(argc, argv, 'o', &Arg_OutputPrefix)) {
+    cout << "> Output filename prefix: " << Arg_OutputPrefix << endl;
+  }
+/* POTENTIAL-SPECIFIC */
+  if(getInputWithFlag(argc, argv, 'q', &Arg)) {
+    parseNextValue(&Arg, &Arg_Q);
+    Arg_Ions[0] = stringToDouble(Arg_Q);
+    parseNextValue(&Arg, &Arg_Q);
+    Arg_Ions[1] = stringToDouble(Arg_Q);
+    parseNextValue(&Arg, &Arg_Q);
+    Arg_Ions[2] = stringToDouble(Arg_Q);
+    parseNextValue(&Arg, &Arg_Q);
+    Arg_Ions[3] = stringToDouble(Arg_Q);
+  }
+/**********************/
+
+  // Load GeomBD3 parameters
+  GBD3Parameters *params = new GBD3Parameters(Arg_ParamFN);
+
+  // Load ligand file
+  cout << "> Loading ligand PQR..." << endl;
+  Molecule_PQRE *lig = new Molecule_PQRE(Arg_LigandFN, params);
+  if(lig->types_set.size() == 0) {
+    cout << "! Error: No ligand atom types found." << endl;
+    exit(-1);
+  } else {
+    lig->print_types();
+    if(! lig->check_types()) exit(EXIT_FAILURE);
   }
 
   // Load receptor file
-  cout << "> Loading receptor PDBQE..." << endl;
-  ReceptorPDBQE *rec = new ReceptorPDBQE(recfn, NULL);
-  cout << "> Receptor center: " << rec->center.x << ", " << rec->center.y << ", " << rec->center.z << endl;
-  cout << "> Receptor minimum: " << rec->min.x << ", " << rec->min.y << ", " << rec->min.z << endl;
-  cout << "> Receptor maximum coordinates: " << rec->max.x << ", " << rec->max.y << ", " << rec->max.z << endl;
-
-  // Calculate grid geometries
-  vertex origin = { rec->min.x - padding, rec->min.y - padding, rec->min.z - padding };
-  vertex dimensions = { (rec->max.x + padding) - origin.x, (rec->max.y + padding) - origin.y, (rec->max.z + padding) - origin.z };
-  int Npoints[3] = { dimensions.x / grid_resolution, dimensions.y / grid_resolution, dimensions.z / grid_resolution };
-  int Ntotal = Npoints[0] * Npoints[1] * Npoints[2];
-
-  //// Data for all grids
-  // Z vector storage for E calcs
-  double *data_e = (double*)calloc(Npoints[2], sizeof(double));
-  if(!data_e) { cout << "! Error: Could not allocate memory for grid calculation." << endl; return EXIT_FAILURE; }
-  ofstream bpm_e(outfn, ios::out | ios::binary);
-  bpm_e.write((char*)&origin, sizeof(vertex));
-  bpm_e.write((char*)&Npoints, sizeof(int)*3);
-  bpm_e.write((char*)&grid_resolution, sizeof(double));
-
-  // Exclusion grid
-  cout << "Allocating data" << endl;
-  bool ***ex = (bool***)calloc(Npoints[0], sizeof(bool**));
-  for(int i=0; i < Npoints[0]; i++) {
-    ex[i] = (bool**)calloc(Npoints[1], sizeof(bool*));
-    for(int j=0; j < Npoints[1]; j++) {
-      ex[i][j] = (bool*)calloc(Npoints[2], sizeof(bool));
-    }
+  cout << "> Loading receptor PQR..." << endl;
+  Molecule_PQRE *rec = new Molecule_PQRE(Arg_ReceptorFN, params);
+  if(rec->types_set.size() == 0) {
+    cout << "! Error: No receptor atom types found." << endl;
+    exit(-1);
+  } else {
+    rec->print_types();
+    if(! rec->check_types()) exit(EXIT_FAILURE);
   }
-  cout << "> Creating exclusion grid...";
-  cout.flush();
-  cilk_for(int i=0; i < rec->coordinates.size(); i++) {
-    vertex Rrec = rec->coordinates[i];
-    double radius = rec->radii[i];
-    int Grec[3];
-    if(coordinateToGrid(Rrec.x, Rrec.y, Rrec.z, &Grec[0], &Grec[1], &Grec[2], &origin, grid_resolution)) {
-      int searchr = ((padding + radius) / grid_resolution) + 1;
-      for(int gx=(Grec[0]-searchr); gx <= Grec[0]+searchr; gx++) {
-        if(gx < 0 or gx >= Npoints[0]) continue;
-        for(int gy=(Grec[1]-searchr); gy <= Grec[1]+searchr; gy++) {
-          if(gy < 0 or gy >= Npoints[1]) continue;
-          for(int gz=(Grec[2]-searchr); gz <= Grec[2]+searchr; gz++) {
-            if(gz < 0 or gz >= Npoints[2]) continue;
 
-            double dx = (origin.x + (gx * grid_resolution)) - Rrec.x;
-            double dy = (origin.y + (gy * grid_resolution)) - Rrec.y;
-            double dz = (origin.z + (gz * grid_resolution)) - Rrec.z;
-            double rr = sqrt(dx*dx + dy*dy + dz*dz);
-            if(rr <= radius + padding) ex[gx][gy][gz] = true;
-          }
-        }
-      }
-    }
-  }
+  // Create exclusion map
+  Map_Exclusion *map_ex = new Map_Exclusion(rec, Arg_GridSpacing, Arg_Padding);
+  map_ex->calculate();
+
+/* POTENTIAL-SPECIFIC */
+  // Create potential map(s)
+  string bpmfn = Arg_OutputPrefix;
+  bpmfn.append("es.bpm");
+  Map_Potential *map_es = new Map_Potential(bpmfn, 0, rec, Arg_GridSpacing, Arg_Padding);
 
   // Electrostatic grid parameters
-  double ions = (/*1+*/1. * (ions_mono[0] * 6.022e23 / 1e27))
-              + (/*1-*/1. * (ions_mono[1] * 6.022e23 / 1e27))
-              + (/*2+*/4. * (ions_di[0] * 6.022e23 / 1e27))
-              + (/*2-*/4. * (ions_di[1] * 6.022e23 / 1e27));
+  double diel_rec = 78.5; //TODO Make this an input parameter
+  double T = 298.;        //TODO Make this an input parameter
+  double ions = (/*1+*/1. * (Arg_Ions[0] * 6.022e23 / 1e27))
+              + (/*1-*/1. * (Arg_Ions[1] * 6.022e23 / 1e27))
+              + (/*2+*/4. * (Arg_Ions[2] * 6.022e23 / 1e27))
+              + (/*2-*/4. * (Arg_Ions[3] * 6.022e23 / 1e27));
   double kappa = sqrt((4. * M_PI * kC * ions) / (diel_rec * kB * T));
+/**********************/
 
-  if(ions == 0) cout << "> Using standard Coulomb potential" << endl;
-  else cout << "> Debye length: " << (1.0/kappa) << "A" << endl;
+  // Calculation storage
+  vector<int> relevant_atoms; // Dynamic relevant atom list
 
-  // relevant atom list
-  vector<int> atoms;
+  // Start our calculations
+  cout << "> Starting grid calculation." << endl;
+  for(int nx=0, nt=0; nx < map_ex->Npoints[0]; nx++) {
+    double X = (nx * Arg_GridSpacing) + map_ex->origin.x;
 
-  // Start a timer and start our calculations
-  Timer *timer = new Timer();
-  timer->start();
-  for(int nx=0, nt=0; nx < Npoints[0]; nx++) {
-    double X = (nx * grid_resolution) + origin.x;
-
-    atoms.clear();
+    relevant_atoms.clear();
     for(int i=0; i < rec->coordinates.size(); i++) {
       vertex Rrec = rec->coordinates[i];
-      if(Rrec.x <= X + padding and Rrec.x >= X - padding)
-        atoms.push_back(i);
+      if(Rrec.x <= X + Arg_Padding and Rrec.x >= X - Arg_Padding)
+        relevant_atoms.push_back(i);
     }
 
-    for(int ny=0; ny < Npoints[1]; ny++) {
-      double Y = (ny * grid_resolution) + origin.y;
-      cilk_for(int nz=0; nz < Npoints[2]; nz++) {
-        double Z = (nz * grid_resolution) + origin.z;
+    for(int ny=0; ny < map_ex->Npoints[1]; ny++) {
+      double Y = (ny * Arg_GridSpacing) + map_ex->origin.y;
+      cilk_for(int nz=0; nz < map_ex->Npoints[2]; nz++) {
+        double Z = (nz * Arg_GridSpacing) + map_ex->origin.z;
 
-        if(ex[nx][ny][nz] == false) continue;
+        if(map_ex->ex[nx][ny][nz] == false) continue;
 
-        data_e[nz] = 0;
+/* POTENTIAL-SPECIFIC */
+        map_es->data_t[nz] = 0;
+/**********************/
 
-        for(int i=0; i < atoms.size(); i++) {
-          if(rec->charges[atoms[i]] == 0.) continue;
-          vertex Rrec = rec->coordinates[atoms[i]];
+        for(int i=0; i < relevant_atoms.size(); i++) {
+          vertex Rrec = rec->coordinates[relevant_atoms[i]];
           vertex dr;
           dr.x = X - Rrec.x; 
           dr.y = Y - Rrec.y; 
+          if(dr.y > Arg_Padding) continue;
           dr.z = Z - Rrec.z; 
+          if(dr.z > Arg_Padding) continue;
           double dist_sqr = dr.x*dr.x + dr.y*dr.y + dr.z*dr.z;
-          if(dist_sqr > padding_sqr) continue;
+          if(dist_sqr > Arg_Padding2) continue;
+
+/* POTENTIAL-SPECIFIC CALCULATION */
           double dist = sqrt(dist_sqr);
-          // Electrostatic
-          double du_e;
-          if(ions == 0) du_e = kC * rec->charges[atoms[i]] / dist;
-                   else du_e = kC * rec->charges[atoms[i]] * exp(-dist * kappa) / (diel_rec * dist);
-          data_e[nz] += du_e;
+          double du_t;
+          if(ions == 0) du_t = kC * rec->charges[relevant_atoms[i]] / dist;
+                   else du_t = kC * rec->charges[relevant_atoms[i]] * exp(-dist * kappa) / (diel_rec * dist);
+          map_es->data_t[nz] += du_t;
+/**********************************/
         }
+
+        // Clamp potential value at 5000
+/* POTENTIAL-SPECIFIC */
+        if(map_es->data_t[nz] > 5000) map_es->data_t[nz] = 5000.;
+/**********************/
       }
 
-      bpm_e.write((char*)data_e, sizeof(double) * Npoints[2]);
+/* POTENTIAL-SPECIFIC */
+      map_es->bpm_t->write((char*)map_es->data_t, sizeof(double) * map_es->Npoints[2]);
+/**********************/
+      double percent_complete = ( (((double)nx) * map_ex->Npoints[1] * map_ex->Npoints[2]) + (((double)ny) * map_ex->Npoints[2]) ) / (double)map_ex->Ntotal;
+      cout << "\r> " << (100.*percent_complete) << " percent complete.                                            " << flush;
     }
 
-    timer->stop();
-    double percent_complete = (((double)nx+1) / (double)Npoints[0]);
-    cout << "\r> " << (100.*percent_complete) << " percent complete.\t\t\t" << flush;
   }
+  cout << endl << "> 100 percent complete." << endl;
 
-  bpm_e.close();
-
-  cout << endl << "> Done." << endl;
+/* POTENTIAL-SPECIFIC */
+  delete map_es;
+/**********************/
+  delete map_ex;
+  delete rec;
+  delete lig;
   return EXIT_SUCCESS;
 }

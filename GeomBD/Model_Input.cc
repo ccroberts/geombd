@@ -102,7 +102,7 @@ void Model::parseInputFile() {
         parseNextValue(&line, &token);
         lout<< "* Receptor filename: " << token << endl;
         if(file_exists(token)) {
-          parseReceptorPDBQE(token);
+          parseReceptorPQR(token);
         } else {
           cout <<"! Receptor file does not exist! Exiting." << endl;
           exit(-1);
@@ -134,7 +134,7 @@ void Model::parseInputFile() {
         parseNextValue(&line, &token); //ligand filename
         lout<< "* Ligand filename: " << token << endl;
         if(file_exists(token)) {
-          parseLigandPDBQE(token);
+          parseLigandPQR(token);
         } else {
           cout <<"! Ligand file does not exist! Exiting." << endl;
           exit(-1);
@@ -316,7 +316,7 @@ void Model::parseInputFile() {
 }
 
 
-void Model::parseReceptorPDBQE(string rfn) {
+void Model::parseReceptorPQR(string rfn) {
   string line, token;
   vector<double> rx;
   vector<double> ry;
@@ -328,14 +328,11 @@ void Model::parseReceptorPDBQE(string rfn) {
 
   while(getline(fd, line)) {
     if(starts_with(&line, "ATOM")) {
-      string at = line.substr(78, 2);
-      if(at == "C " or at == "C") radii.push_back(1.7);
-      if(at == "N " or at == "N") radii.push_back(1.55);
-      if(at == "O " or at == "O") radii.push_back(1.52);
-      if(at == "H " or at == "H") radii.push_back(1.2);
-      if(at == "S " or at == "S") radii.push_back(1.8);
-      if(at == "Na") radii.push_back(0.934);
-      if(at == "Cl") radii.push_back(1.948);
+      string at_raw = line.substr(12, 4);
+      string at = trim(at_raw);
+      double rd = stringToDouble(line.substr(69, 6));
+      cout << rd << endl;
+      radii.push_back(rd);
       double x = stringToDouble(line.substr(30, 8));
       double y = stringToDouble(line.substr(38, 8));
       double z = stringToDouble(line.substr(46, 8));
@@ -395,7 +392,7 @@ void Model::parseReceptorPDBQE(string rfn) {
 }
 
 
-void Model::parseLigandPDBQE(string lfn) {
+void Model::parseLigandPQR(string lfn) {
   string line, token;
   Body *bi = new Body(this, sessions[sessions.size()-1]);
   Bead *bj = NULL;
@@ -416,49 +413,22 @@ void Model::parseLigandPDBQE(string lfn) {
       double y = stringToDouble(line.substr(38, 8));
       double z = stringToDouble(line.substr(46, 8));
       double q = stringToDouble(line.substr(70, 7));
-      string at = line.substr(78, 2);
-      if(at == "A")  at = "C";
-      if(at == "HD") at = "H";
-      if(at == "HS") at = "H";
-      if(at == "NA") at = "N";
-      if(at == "NS") at = "N";
-      if(at == "OA") at = "O";
-      if(at == "OS") at = "O";
-      if(at == "SA") at = "S";
-      if(at == "CL") at = "Cl";
-      if(at == "NA") at = "Na";
-      if(at == "BR") at = "Br";
-      if(at == "MG") at = "Mg";
-      if(at == "CA") at = "Ca";
-      if(at == "MN") at = "Mn";
-      if(at == "FE") at = "Fe";
-      if(at == "ZN") at = "Zn";
+      string at_raw = line.substr(12, 4);
+      string at = trim(at_raw);
+      bj->r = stringToDouble(line.substr(69, 6));
+      cout << bj->r << endl;
 
-      if(at == "C " or at == "C") {
-        bj->m = 12.;
-        bj->r = 1.7; 
-      }
-      if(at == "N " or at == "N") {
-        bj->m = 14.;
-        bj->r = 1.55; 
-      }
-      if(at == "O " or at == "O") {
-        bj->m = 16.;
-        bj->r = 1.52; 
-      }
-      if(at == "H " or at == "H") {
-        bj->m = 1.;
-        bj->r = 1.2; 
-      }
-      if(at == "S " or at == "S") {
-        bj->m = 32.;
-        bj->r = 1.8; 
-      }
-      if(at == "Na") { bj->r = 0.934; bj->m = 22.9898; }
-      if(at == "Cl") { bj->r = 1.948; bj->m = 35.45; }
+      //TODO: Complete table
+      if(at == "C") bj->m = 12.;
+      if(at == "N") bj->m = 14.;
+      if(at == "O") bj->m = 16.;
+      if(at == "H") bj->m = 1.;
+      if(at == "S") bj->m = 32.;
+      if(at == "Na") bj->m = 22.9898;
+      if(at == "Cl") bj->m = 35.45;
 
       if(bj->m == 0.) {
-        lout << "!!!! FATAL: Unassigned ligand bead type: " << at << endl;
+        lout << "! FATAL: No mass for ligand bead type: " << at << endl;
         exit(-1);
       }
       bj->R.x = x;

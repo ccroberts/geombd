@@ -4,7 +4,7 @@ import sys, subprocess
 
 
 
-def synonym(at):
+def at_synonym(at):
   if at == 'H5\'': return 'H5\'1'
   elif at == 'H5\'\'': return 'H5\'2'
   elif at == 'H2\'': return 'H2\'1'
@@ -16,24 +16,31 @@ def synonym(at):
   return at
 
 
-def process_receptor(af, ff, resname, resid, resdata):
+def at_to_element(at):
+  return at[0]
+
+
+def process_receptor(outf, af, ff, resname, resid, resdata):
   if resname in ff.keys():
     for line in resdata:
       at = line[12:16].strip()
-      at = synonym(at)
+      at = at_synonym(at)
+      el = at_to_element(at)
       x = float(line[30:38])
       y = float(line[38:46])
       z = float(line[46:54])
       try:
         param = ff[resname][at]
         #print '%s  1.00  0.00   %8.4f %s' % (line[:54], param[0], param[1])
-        print('%s%10.4f%10.4f%10.4f %7.4f %6.4f %s' % (line[:30], x, y, z, param[0], af[param[1]]['r'], param[1])) #PQR
+        pref = '%s%s%s' % (line[:12], str(' %s' % param[1].ljust(3, ' ')), line[16:30])
+        outf.write('%s%10.4f%10.4f%10.4f %7.4f %6.4f\n' % (pref, x, y, z, param[0], af[param[1]]['r'])) #PQR
       except KeyError:
         print 'REMARK No charge assign for atom type', at
+        pref = '%s%s%s' % (line[:12], str(' %s' % el.ljust(3, ' ')), line[16:30])
         #print '%s  1.00  0.00   %8.4f %s' % (line[:54], 0, at[0])
-        print('%s%10.4f%10.4f%10.4f %7.4f %6.4f %s' % (line[:30], x, y, z, 0, af[at[0]]['r'], at[0])) #PQR
+        outf.write('%s%10.4f%10.4f%10.4f %7.4f %6.4f\n' % (pref, x, y, z, 0, af[at[0]]['r'])) #PQR
   else:
-    print 'REMARK: No assignment for residue', resname, resid, ' - Using OpenBabel to assign Gasteiger charges.'
+    outf.write('REMARK No forcefield assignment for the following residue. Using OpenBABEL\n')
     tmpfd = open('/tmp/het.pdb', 'w')
     for line in resdata:
       tmpfd.write(line)
@@ -56,18 +63,18 @@ def process_receptor(af, ff, resname, resid, resdata):
     i = 0
     for line in open('/tmp/heth.pdb', 'r'):
       if line.startswith('ATOM') or line.startswith('HETATM'):
-        #TODO... better atom type parsing
-        at = line[12:16].strip()[0]#TODO
+        at = at_synonym(line[12:16].strip())
+        el = at_to_element(at)
         x = float(line[30:38])
         y = float(line[38:46])
         z = float(line[46:54])
-        #print '%s  1.00  0.00   %8.4f %s' % (line[:54], Q[i], at[0]) #PDBQE
-        print('%s%10.4f%10.4f%10.4f %7.4f %6.4f %s' % (line[:30], x, y, z, Q[i], af[at]['r'], at)) #PQR
+        pref = '%s%s%s' % (line[:12], str(' %s' % el.ljust(3, ' ')), line[16:30])
+        outf.write('%s%10.4f%10.4f%10.4f %7.4f %6.4f\n' % (pref, x, y, z, Q[i], af[el]['r'])) #PQR
         i += 1
 
 
 
-def run(paramfn, pdbfn):
+def run(paramfn, pdbfn, outfn):
   ff = {}
   af = {}
 
@@ -88,6 +95,8 @@ def run(paramfn, pdbfn):
   resd = []
   term = False
 
+  outf = open(outfn, 'w')
+
   for line in open(pdbfn, 'r'):
     if line.startswith('ATOM') or line.startswith('HETATM'):
       rid = int(line[23:26])
@@ -97,10 +106,10 @@ def run(paramfn, pdbfn):
           tnm = 'N%s' % rnm
           if tnm in ff.keys(): rnm = tnm
         else:
-          process_receptor(af, ff, resn, resi, resd)
+          process_receptor(outf, af, ff, resn, resi, resd)
           resd = []
           if term:
-            print 'TER'
+            outf.write('TER\n')
         if term:
           tnm = 'N%s' % rnm
           if tnm in ff.keys(): rnm = tnm
@@ -113,15 +122,16 @@ def run(paramfn, pdbfn):
         term = True
     if line.startswith('END'):
       if len(resd) != 0:
-        process_receptor(af, ff, resn, resi, resd)
+        process_receptor(outf, af, ff, resn, resi, resd)
         resi = -6969
         resd = []
         resn = None
-        print 'END'
+        outf.write('END\n')
 
 
 if __name__ == '__main__':
-  if len(sys.argv) == 1:
-    print 'Usage:', sys.argv[0], 'ParameterFile', 'PDBFile'
-  if len(sys.argv) == 3:
-    run(sys.argv[1], sys.argv[2])
+  if len(sys.argv) < 7:
+    print 'Usage:', sys.argv[0], '-d [Parm.gbdp]', '-i [Molecule.PDB]', '-o [Molecule.PQR]'
+  if len(sys.argv) == 7:
+    argd = { sys.argv[1]: sys.argv[2], sys.argv[3]: sys.argv[4], sys.argv[5]: sys.argv[6] }
+    run(argd['-d'], argd['-i'], argd['-o'])

@@ -4,55 +4,37 @@ CFLAGS = -O3 -std=c++0x -I/usr/include/x86_64-linux-gnu/c++/4.8/ -openmp -I../Ge
 #CFLAGS += -DTOUCHING
 LDFLAGS = -lcilkrts -openmp
 		
-O_gridtool = GridTool.o 
-X_gridtool = ../bin/GridTool
+O_gLJ = Gridder-LJ.o 
+X_gLJ = ../bin/Gridder-LJ
 		
-O_gridder = Gridder-LJ.o 
-X_gridder = ../bin/Gridder-LJ
+O_gEX = Gridder-EX.o 
+X_gEX = ../bin/Gridder-EX
 		
-O_griddes = Gridder-ES.o 
-X_griddes = ../bin/Gridder-ES
+O_gES = Gridder-ES.o 
+X_gES = ../bin/Gridder-ES
+		
+O_gBPM2DX = bpm2dx.o
+X_gBPM2DX = ../bin/bpm2dx
+		
+O_gBXM2DX = bxm2dx.o
+X_gBXM2DX = ../bin/bxm2dx
 
-O_griddd = Gridder-D.o 
-X_griddd = ../bin/Gridder-D
+all : gLJ gEX gES gBPM2DX gBXM2DX
 
-O_spm2dx = spm2dx.o 
-X_spm2dx = ../bin/Gridder-spm2dx
+gLJ: $(O_gLJ) $(C_gLJ)
+	$(CC) $(CFLAGS) $(O_gLJ) $(C_gLJ) -o $(X_gLJ) $(LDFLAGS)
 
-O_bpm2dx = bpm2dx.o 
-X_bpm2dx = ../bin/Gridder-bpm2dx
+gEX: $(O_gEX) $(C_gEX)
+	$(CC) $(CFLAGS) $(O_gEX) $(C_gEX) -o $(X_gEX) $(LDFLAGS)
 
-O_bpm_info = bpm_info.o 
-X_bpm_info = ../bin/Gridder-bpm_info
+gES: $(O_gES) $(C_gES)
+	$(CC) $(CFLAGS) $(O_gES) $(C_gES) -o $(X_gES) $(LDFLAGS)
 
-O_griddex = Gridder-EX.o
-X_griddex = ../bin/Gridder-EX
+gBPM2DX: $(O_gBPM2DX) $(C_gBPM2DX)
+	$(CC) $(CFLAGS) $(O_gBPM2DX) $(C_gBPM2DX) -o $(X_gBPM2DX) $(LDFLAGS)
 
-all : gridtool gridder griddes griddex griddd bpm2dx spm2dx bpm_info
-
-gridtool: $(O_gridtool) $(C_gridtool)
-	$(CC) $(CFLAGS) $(O_gridtool) $(C_gridtool) -o $(X_gridtool) $(LDFLAGS)
-
-gridder: $(O_gridder) $(C_gridder)
-	$(CC) $(CFLAGS) $(O_gridder) $(C_gridder) -o $(X_gridder) $(LDFLAGS)
-
-griddes: $(O_griddes) $(C_griddes)
-	$(CC) $(CFLAGS) $(O_griddes) $(C_griddes) -o $(X_griddes) $(LDFLAGS)
-
-griddex: $(O_griddex) $(C_griddex)
-	$(CC) $(CFLAGS) $(O_griddex) $(C_griddex) -o $(X_griddex) $(LDFLAGS)
-
-griddd: $(O_griddd) $(C_griddd)
-	$(CC) $(CFLAGS) $(O_griddd) $(C_griddd) -o $(X_griddd) $(LDFLAGS)
-
-bpm2dx: $(O_bpm2dx) $(C_bpm2dx)
-	$(CC) $(CFLAGS) $(O_bpm2dx) $(C_bpm2dx) -o $(X_bpm2dx) $(LDFLAGS)
-
-spm2dx: $(O_spm2dx) $(C_spm2dx)
-	$(CC) $(CFLAGS) $(O_spm2dx) $(C_spm2dx) -o $(X_spm2dx) $(LDFLAGS)
-
-bpm_info: $(O_bpm_info) $(C_bpm_info)
-	$(CC) $(CFLAGS) $(O_bpm_info) $(C_bpm_info) -o $(X_bpm_info) $(LDFLAGS)
+gBXM2DX: $(O_gBXM2DX) $(C_gBXM2DX)
+	$(CC) $(CFLAGS) $(O_gBXM2DX) $(C_gBXM2DX) -o $(X_gBXM2DX) $(LDFLAGS)
 
 %.o : %.cc
 	@echo " - Compiling $<..." 
@@ -63,4 +45,4 @@ bpm_info: $(O_bpm_info) $(C_bpm_info)
 	$(NVCC) -c $<
 
 clean:
-	@rm *.o $(X_gridder) $(X_griddes) $(X_bpm2dx) $(X_griddex)
+	@rm *.o $(X_gLJ) $(X_gES) $(X_gBPM2DX) $(X_gBXM2DX) $(X_gEX)

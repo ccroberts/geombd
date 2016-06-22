@@ -19,8 +19,8 @@ class Model {
   public:
     string ifn;
     void parseInputFile();
-    void parseReceptorPDBQE(string rfn);
-    void parseLigandPDBQE(string lfn);
+    void parseReceptorPQR(string rfn);
+    void parseLigandPQR(string lfn);
 
   private:
     string ofn;

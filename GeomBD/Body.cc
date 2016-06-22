@@ -10,7 +10,7 @@ Body::Body() {
   session = NULL;
 
   t = 0.;
-  dt = 0.100;
+  dt = 0.;
 
   t_dwell = 0.;
   t_dwell_max = 0.;
@@ -18,6 +18,8 @@ Body::Body() {
 
   r = 0.;
   r_max = 0.;
+
+  mF = 0.;
 }
 
 
@@ -122,35 +124,49 @@ void Body::define() {
 
 
 void Body::save() {
+  _t = t;
   _R.x = R.x;
   _R.y = R.y;
   _R.z = R.z;
   _Ra.x = Ra.x;
   _Ra.y = Ra.y;
   _Ra.z = Ra.z;
+  _F.x = F.x;
+  _F.y = F.y;
+  _F.z = F.z;
+  _Fa.x = Fa.x;
+  _Fa.y = Fa.y;
+  _Fa.z = Fa.z;
 
   for(int i=0; i < beads.size(); i++) {
-    beads[i]->saveR();
+    beads[i]->save();
   }
 }
 
 
 void Body::restore() {
+  t = _t;
   R.x = _R.x;
   R.y = _R.y;
   R.z = _R.z;
   Ra.x = _Ra.x;
   Ra.y = _Ra.y;
   Ra.z = _Ra.z;
+  F.x = _F.x;
+  F.y = _F.y;
+  F.z = _F.z;
+  Fa.x = _Fa.x;
+  Fa.y = _Fa.y;
+  Fa.z = _Fa.z;
 
   for(int i=0; i < beads.size(); i++) {
-    beads[i]->restoreR();
+    beads[i]->restore();
   }
 }
 
 
  
-bool Body::translate(double dx, double dy, double dz, bool suppressWarning) {
+bool Body::translate(double dx, double dy, double dz) {
   R.x += dx;
   R.y += dy;
   R.z += dz;
@@ -160,19 +176,13 @@ bool Body::translate(double dx, double dy, double dz, bool suppressWarning) {
     bi->translate(dx, dy, dz);
   }
 
-  double jump = dx*dx + dy*dy + dz*dz;
-  if(jump > 25.0 and not suppressWarning) {
-    model->lout << "! Warning: Body translation greater than 5.0A in a single step." << endl;
-    return false;
-  }
-
   return true;
 }
 
 
  
 void Body::center() {
-  translate(-R.x, -R.y, -R.z, true);
+  translate(-R.x, -R.y, -R.z);
 }
 
 
