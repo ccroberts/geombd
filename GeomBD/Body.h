@@ -13,6 +13,8 @@ class Session;
 class Body {
   private:
     vertex _R, _Ra;
+    vertex _F, _Fa;
+    double _t;
 
   public:
     Model *model;
@@ -27,6 +29,7 @@ class Body {
     double D, Da;
     vertex R, Ra;
     vertex F, Fa;
+    double mF;
     double r, r_max;
 
   public:
@@ -47,7 +50,7 @@ class Body {
     virtual void restore();
 
   public:
-    virtual bool translate(double dx, double dy, double dz, bool suppressWarning=false);
+    virtual bool translate(double dx, double dy, double dz);
     virtual void center();
     virtual void rotate(double dax, double day, double daz);
 

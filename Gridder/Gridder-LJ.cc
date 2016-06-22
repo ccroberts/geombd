@@ -1,257 +1,164 @@
-#include "Main.h"
-#include "Strings.h"
-#include "GBD2Parameters.h"
-#include "Timer.h"
-
-bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
-  int  opt;                                                                                                                                                                                                     
-  bool bopt = false;
-  char gopt[2] = { flag, ':' };
-
-  for(int i=1; i < argc; i++) {
-    if(argv[i][0] == '-' && argv[i][1] == flag) {
-      if(argv[i+1][0] != '-') {
-        *value = argv[i+1];
-        bopt = true;
-        i++;
-        break;
-      }
-    }
-  }
-
-  return bopt;
-}
-
-
-bool coordinateToGrid(double x, double y, double z, int *Gx, int *Gy, int *Gz, vertex *origin, double delta) {
-  *Gx = (int)floor(((x-origin->x)/delta) + 0.5);
-  *Gy = (int)floor(((y-origin->y)/delta) + 0.5);
-  *Gz = (int)floor(((z-origin->z)/delta) + 0.5);
-  return true;
-}
+#include "Gridder.h"
 
 
 void usage() {
-  printf("Usage: Gridder-LJ -d [FORECFIELD.ff] -n NTHREADS(=max) -r [Receptor.PDBQE] -l [Ligand.PDBQE] (Optional: -p GRID_PADDING(=40A) -s GRID_SPACING(=0.375A) -w OutputFilenamePrefix)\n");
+  printf("Usage: Gridder-LJ -d [FF.gbdp] -r [Receptor.PQR] -l [Ligand.PQR] -o [Output Prefix] -n [N_THREADS] (-p [Padding=40A] -s [Spacing=0.5A])\n");
 }
 
 
 int main(int argc, char **argv) {
-  string datfn, ligfn, recfn, fldfn, stoken, token, name_prefix;
-  double T = 298.;
-  double diel_rec = 78.5;
-  double grid_resolution = 0.375;
-  double padding = 40., padding_sqr;
-  const double twoto16pow = pow(2.0, 1./6.);
+  string Arg, Arg_ParamFN, Arg_ReceptorFN, Arg_LigandFN, Arg_OutputPrefix;
+  int Arg_Padding = 40, Arg_Padding2 = 40*40;
+  double Arg_GridSpacing = 0.5;
 
-  // GBD2 parameter file
-  if(!getInputWithFlag(argc, argv, 'd', &datfn)) { usage(); return -1; }
-  // receptor pdbqt
-  if(!getInputWithFlag(argc, argv, 'r', &recfn)) { usage(); return -1; }
-  // ligand pdbqt
-  if(!getInputWithFlag(argc, argv, 'l', &ligfn)) { usage(); return -1; }
-  // number of processors/threads
-  if(getInputWithFlag(argc, argv, 'n', &stoken)) {
-    __cilkrts_set_param("nworkers", stoken.c_str());
+  // Obtain command line input
+  if(!getInputWithFlag(argc, argv, 'd', &Arg_ParamFN)) { usage(); return -1; }
+  if(!getInputWithFlag(argc, argv, 'r', &Arg_ReceptorFN)) { usage(); return -1; }
+  if(!getInputWithFlag(argc, argv, 'l', &Arg_LigandFN)) { usage(); return -1; }
+  if(getInputWithFlag(argc, argv, 'n', &Arg)) {
+    __cilkrts_set_param("nworkers", Arg.c_str());
   }
-  // grid padding
-  if(getInputWithFlag(argc, argv, 'p', &stoken)) {
-    padding = stringToDouble(stoken);
+  if(getInputWithFlag(argc, argv, 'p', &Arg)) {
+    Arg_Padding = stringToDouble(Arg);
+    Arg_Padding2 = pow(Arg_Padding, 2);
   }
-  padding_sqr = padding * padding;
-  // grid spacing
-  if(getInputWithFlag(argc, argv, 's', &stoken)) {
-    grid_resolution = stringToDouble(stoken);
+  if(getInputWithFlag(argc, argv, 's', &Arg)) {
+    Arg_GridSpacing = stringToDouble(Arg);
   }
-  // grid padding
-  if(getInputWithFlag(argc, argv, 'w', &name_prefix)) {
-    cout << "> Output filename prefix: " << name_prefix << endl;
+  if(getInputWithFlag(argc, argv, 'o', &Arg_OutputPrefix)) {
+    cout << "> Output filename prefix: " << Arg_OutputPrefix << endl;
   }
+/* POTENTIAL-SPECIFIC */
+/**********************/
 
-  // Load AD parameters
-  GBD2Parameters *adp = new GBD2Parameters(datfn);
-  LigandPDBQE *lig = new LigandPDBQE(ligfn);
+  // Load GeomBD3 parameters
+  GBD3Parameters *params = new GBD3Parameters(Arg_ParamFN);
 
-  cout << "> Types in ligand:";
-  set<string>::iterator it;
-  for(it=lig->types_set.begin(); it!=lig->types_set.end(); ++it) {
-    bool found = false;
-    for(int j=0; j < adp->types.size(); j++) {
-      if(adp->types[j] == *it) found = true;
-    }
-    if(found) cout << ' ' << *it;
-    else {
-      cout << "! Error: Ligand atom type " << *it << " not found in the GBD2 parameters." << endl;
-      exit(-1);
-    }
+  // Load ligand file
+  cout << "> Loading ligand PQR..." << endl;
+  Molecule_PQRE *lig = new Molecule_PQRE(Arg_LigandFN, params);
+  if(lig->types_set.size() == 0) {
+    cout << "! Error: No ligand atom types found." << endl;
+    exit(-1);
+  } else {
+    lig->print_types();
+    if(! lig->check_types()) exit(EXIT_FAILURE);
   }
-  cout << endl;
 
   // Load receptor file
-  cout << "> Loading receptor PDBQE..." << endl;
-  ReceptorPDBQE *rec = new ReceptorPDBQE(recfn, adp);
-  cout << "> Receptor center: " << rec->center.x << ", " << rec->center.y << ", " << rec->center.z << endl;
-  cout << "> Receptor minimum: " << rec->min.x << ", " << rec->min.y << ", " << rec->min.z << endl;
-  cout << "> Receptor maximum coordinates: " << rec->max.x << ", " << rec->max.y << ", " << rec->max.z << endl;
-  cout << "> Types in receptor:";
-  for(it=rec->types_set.begin(); it!=rec->types_set.end(); ++it) {
-    cout << ' ' << *it;
-  }
-  cout << endl;
-
-  // Check to make sure all receptor atom types are in our parameter data set
-  for(it=rec->types_set.begin(); it!=rec->types_set.end(); ++it) {
-    bool found = false;
-    for(int j=0; j < adp->types.size(); j++) {
-      if(adp->types[j] == *it) found = true;
-    }
-    if(!found) {
-      cout << "! Error: Ligand atom type " << *it << " not found in the GBD2 parameters." << endl;
-      return EXIT_FAILURE;
-    }
+  cout << "> Loading receptor PQR..." << endl;
+  Molecule_PQRE *rec = new Molecule_PQRE(Arg_ReceptorFN, params);
+  if(rec->types_set.size() == 0) {
+    cout << "! Error: No receptor atom types found." << endl;
+    exit(-1);
+  } else {
+    rec->print_types();
+    if(! rec->check_types()) exit(EXIT_FAILURE);
   }
 
-  // Calculate grid geometries
-  vertex origin = { rec->min.x - padding, rec->min.y - padding, rec->min.z - padding };
-  vertex dimensions = { (rec->max.x + padding) - origin.x, (rec->max.y + padding) - origin.y, (rec->max.z + padding) - origin.z };
-  int Npoints[3] = { dimensions.x / grid_resolution, dimensions.y / grid_resolution, dimensions.z / grid_resolution };
-  int Ntotal = Npoints[0] * Npoints[1] * Npoints[2];
+  // Create exclusion map
+  Map_Exclusion *map_ex = new Map_Exclusion(rec, Arg_GridSpacing, Arg_Padding);
+  map_ex->calculate();
 
-  //// Data for all grids
-  // Single point calculation storage
-  vector<double> u_t(lig->types_set.size());
-  // Exclusion grid
-  cout << "Allocating data" << endl;
-  bool ***ex = (bool***)calloc(Npoints[0], sizeof(bool**));
-  for(int i=0; i < Npoints[0]; i++) {
-    ex[i] = (bool**)calloc(Npoints[1], sizeof(bool*));
-    for(int j=0; j < Npoints[1]; j++) {
-      ex[i][j] = (bool*)calloc(Npoints[2], sizeof(bool));
-    }
-  }
+/* POTENTIAL-SPECIFIC */
+  // Create potential map(s)
+  vector< Map_Potential* > maps_lj;
 
-  // Dynamic storage for VDW/HB calcs
-  vector<double*> data_t;
-  vector<int> type_t;
-  vector<ofstream*> bpm_t;
-  string typefn;
+  set<string>::iterator it;
   for(it=lig->types_set.begin(); it!=lig->types_set.end(); ++it) {
-    double *new_data_t = (double*)calloc(Npoints[2], sizeof(double));
-    if(!new_data_t) { cout << "! Error: Could not allocate memory for grid calculation." << endl; return EXIT_FAILURE; }
-    data_t.push_back(new_data_t);
-    type_t.push_back(adp->index_for_type(*it));
-    typefn = name_prefix;
-    typefn.append(*it);
-    typefn.append(".bpm");
-    bpm_t.push_back(new ofstream(typefn, ios::out | ios::binary));
-    // write header
-    bpm_t[bpm_t.size()-1]->write((char*)&origin, sizeof(vertex));
-    bpm_t[bpm_t.size()-1]->write((char*)&Npoints, sizeof(int)*3);
-    bpm_t[bpm_t.size()-1]->write((char*)&grid_resolution, sizeof(double));
-  }
+    int type_index = params->index_for_type(*it);
 
-  // Exclusion grid
-  Timer *timer = new Timer();
-  timer->start();
-  cout << "> Creating exclusion grid...";
-  cout.flush();
-  cilk_for(int i=0; i < rec->coordinates.size(); i++) {
-    vertex Rrec = rec->coordinates[i];
-    double radius = rec->radii[i];
-    int Grec[3];
-    if(coordinateToGrid(Rrec.x, Rrec.y, Rrec.z, &Grec[0], &Grec[1], &Grec[2], &origin, grid_resolution)) {
-      int searchr = ((padding + radius) / grid_resolution) + 1;
-      for(int gx=(Grec[0]-searchr); gx <= Grec[0]+searchr; gx++) {
-        if(gx < 0 or gx >= Npoints[0]) continue;
-        for(int gy=(Grec[1]-searchr); gy <= Grec[1]+searchr; gy++) {
-          if(gy < 0 or gy >= Npoints[1]) continue;
-          for(int gz=(Grec[2]-searchr); gz <= Grec[2]+searchr; gz++) {
-            if(gz < 0 or gz >= Npoints[2]) continue;
+    string bpmfn = Arg_OutputPrefix;
+    bpmfn.append(*it);
+    bpmfn.append(".bpm");
 
-            double dx = (origin.x + (gx * grid_resolution)) - Rrec.x;
-            double dy = (origin.y + (gy * grid_resolution)) - Rrec.y;
-            double dz = (origin.z + (gz * grid_resolution)) - Rrec.z;
-            if(sqrt(dx*dx + dy*dy + dz*dz) <= radius + padding) ex[gx][gy][gz] = true;
-          }
-        }
-      }
-    }
+    maps_lj.push_back(new Map_Potential(bpmfn, type_index, rec, Arg_GridSpacing, Arg_Padding));
   }
-  timer->stop();
-  cout << "> Elapsed time (s): ";
-  timer->print(&cout);
+/**********************/
+
+  // Calculation storage
+  vector<int> relevant_atoms; // Dynamic relevant atom list
+
+  // Start our calculations
   cout << "> Starting grid calculation." << endl;
+  for(int nx=0, nt=0; nx < map_ex->Npoints[0]; nx++) {
+    double X = (nx * Arg_GridSpacing) + map_ex->origin.x;
 
-  vector<int> atoms;
-
-  // Start a timer and start our calculations
-  timer->start();
-  for(int nx=0, nt=0; nx < Npoints[0]; nx++) {
-    double X = (nx * grid_resolution) + origin.x;
-
-    atoms.clear();
+    relevant_atoms.clear();
     for(int i=0; i < rec->coordinates.size(); i++) {
       vertex Rrec = rec->coordinates[i];
-      if(Rrec.x <= X + padding and Rrec.x >= X - padding)
-        atoms.push_back(i);
+      if(Rrec.x <= X + Arg_Padding and Rrec.x >= X - Arg_Padding)
+        relevant_atoms.push_back(i);
     }
 
-    for(int ny=0; ny < Npoints[1]; ny++) {
-      double Y = (ny * grid_resolution) + origin.y;
-      cilk_for(int nz=0; nz < Npoints[2]; nz++) {
-        double Z = (nz * grid_resolution) + origin.z;
+    for(int ny=0; ny < map_ex->Npoints[1]; ny++) {
+      double Y = (ny * Arg_GridSpacing) + map_ex->origin.y;
+      cilk_for(int nz=0; nz < map_ex->Npoints[2]; nz++) {
+        double Z = (nz * Arg_GridSpacing) + map_ex->origin.z;
 
-        if(ex[nx][ny][nz] == false) continue;
+        if(map_ex->ex[nx][ny][nz] == false) continue;
 
-        for(int at=0; at < type_t.size(); at++)
-          data_t[at][nz] = 0;
+/* POTENTIAL-SPECIFIC */
+        for(int i=0; i < maps_lj.size(); i++) {
+          maps_lj[i]->data_t[nz] = 0;
+        }
+/**********************/
 
-        for(int i=0; i < atoms.size(); i++) {
-          vertex Rrec = rec->coordinates[atoms[i]];
+        for(int i=0; i < relevant_atoms.size(); i++) {
+          vertex Rrec = rec->coordinates[relevant_atoms[i]];
           vertex dr;
           dr.x = X - Rrec.x; 
           dr.y = Y - Rrec.y; 
-          if(dr.y > padding) continue;
+          if(dr.y > Arg_Padding) continue;
           dr.z = Z - Rrec.z; 
-          if(dr.z > padding) continue;
+          if(dr.z > Arg_Padding) continue;
           double dist_sqr = dr.x*dr.x + dr.y*dr.y + dr.z*dr.z;
-          if(dist_sqr > padding_sqr) continue;
-          double dist = sqrt(dist_sqr);
-          if(dist < 0.5*rec->radii[atoms[i]]) dist_sqr = pow(0.5*rec->radii[atoms[i]], 2);
+          if(dist_sqr > Arg_Padding2) continue;
+
+/* POTENTIAL-SPECIFIC CALCULATION */
           // Iterate of each ligand atom type and calc VDW/HB
-          int rec_type = rec->types[atoms[i]];
+          int rec_type = rec->types[relevant_atoms[i]];
+          double dist = sqrt(dist_sqr);
           double dist_6 = dist_sqr * dist_sqr * dist_sqr;
           double dist_12 = dist_6 * dist_6;
-          //double dist_8 = dist_6 * dist_sqr;
-          for(int at=0; at < type_t.size(); at++) {
-            int lig_type = type_t[at];
-            pair_parameter parm;
-            if(lig_type > rec_type) parm = adp->lj_map[lig_type][rec_type];
-            else parm = adp->lj_map[rec_type][lig_type];
-            double du_t = (parm.A / dist_12) - (parm.B / dist_6);
-            //double du_t = (parm.A / dist_8) - (parm.B / dist_6);
-            data_t[at][nz] += du_t;
+          for(int i=0; i < maps_lj.size(); i++) {
+            int lig_type = maps_lj[i]->type_t;
+            LJ_Pair_Parameter parm;
+            double du_t;
+            if(lig_type > rec_type) parm = params->lj_map[lig_type][rec_type];
+            else parm = params->lj_map[rec_type][lig_type];
+            du_t = (parm.A / dist_12) - (parm.B / dist_6);
+            maps_lj[i]->data_t[nz] += du_t;
           }
         }
+/**********************************/
+
+        // Clamp potential value at 5000
+/* POTENTIAL-SPECIFIC */
+        for(int i=0; i < maps_lj.size(); i++) {
+          if(maps_lj[i]->data_t[nz] > 5000) maps_lj[i]->data_t[nz] = 5000.;
+        }
+/**********************/
       }
 
-      //bpm_e.write((char*)data_e, sizeof(double) * Npoints[2]);
-      //bpm_d.write((char*)data_d, sizeof(double) * Npoints[2]);
-      for(int at=0; at < type_t.size(); at++) {
-        bpm_t[at]->write((char*)data_t[at], sizeof(double) * Npoints[2]);
+/* POTENTIAL-SPECIFIC */
+      for(int i=0; i < maps_lj.size(); i++) {
+        maps_lj[i]->bpm_t->write((char*)maps_lj[i]->data_t, sizeof(double) * maps_lj[i]->Npoints[2]);
       }
-      double percent_complete = ( (((double)nx) * Npoints[1] * Npoints[2]) + (((double)ny) * Npoints[2]) ) / (double)Ntotal;
+/**********************/
+      double percent_complete = ( (((double)nx) * map_ex->Npoints[1] * map_ex->Npoints[2]) + (((double)ny) * map_ex->Npoints[2]) ) / (double)map_ex->Ntotal;
       cout << "\r> " << (100.*percent_complete) << " percent complete.                                            " << flush;
     }
 
   }
-  timer->stop();
-  cout << endl << "> Elapsed time (s): ";
-  timer->print(&cout);
+  cout << endl << "> 100 percent complete." << endl;
 
-  for(int at=0; at < type_t.size(); at++)
-    bpm_t[at]->close();
-
-  cout << endl << "> Done." << endl;
+/* POTENTIAL-SPECIFIC */
+  for(int i=0; i < maps_lj.size(); i++)
+    maps_lj.pop_back();
+/**********************/
+  delete map_ex;
+  delete rec;
+  delete lig;
   return EXIT_SUCCESS;
 }

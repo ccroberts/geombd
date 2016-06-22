@@ -8,6 +8,7 @@
 class Bead {
   private:
     vertex _R;
+    vertex _F;
 
   public:
     vertex R;
@@ -35,17 +36,23 @@ class Bead {
     }
 
 
-    void saveR() {
+    void save() {
       _R.x = R.x;
       _R.y = R.y;
       _R.z = R.z;
+      _F.x = F.x;
+      _F.y = F.y;
+      _F.z = F.z;
     }
 
 
-    void restoreR() {
+    void restore() {
       R.x = _R.x;
       R.y = _R.y;
       R.z = _R.z;
+      F.x = _F.x;
+      F.y = _F.y;
+      F.z = _F.z;
     }
 
 

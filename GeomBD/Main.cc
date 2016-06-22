@@ -25,7 +25,7 @@ bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
 
 
 void usage() {
-  printf("Usage: GeomBD2 -f INPUTFILE -o TRAJECTORY.pqr -l LOGFILE.log\n");
+  printf("Usage: GeomBD2 -i INPUTFILE -o TRAJECTORY.pqr -l LOGFILE.log\n");
 }
 
 
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 
   srand(time(NULL));
 
-  if(!getInputWithFlag(argc, argv, 'f', &fldfn)) { usage(); return -1; }
+  if(!getInputWithFlag(argc, argv, 'i', &fldfn)) { usage(); return -1; }
   if(!getInputWithFlag(argc, argv, 'o', &trjfn)) { usage(); return -1; }
   if(!getInputWithFlag(argc, argv, 'l', &logfn)) { usage(); return -1; }
 
@@ -55,6 +55,7 @@ int main(int argc, char **argv) {
   sigaction(SIGQUIT, &action, NULL);
 
   // Create model
+  cout << "* Creating Model object..." << endl;
   model = new Model(fldfn, trjfn, logfn);
 
   model->lout << "* Starting simulation with " << model->Nthreads << " threads" << endl;

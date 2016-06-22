@@ -5,7 +5,7 @@ CFLAGS += -DDEBUG
 LDFLAGS = -lcilkrts -lmkl_blas95_ilp64 -lmkl_intel_ilp64 -lmkl_core -lmkl_intel_thread -lmkl_gf_ilp64 -openmp
 		
 O_bd = Main.o Model.o Model_Input.o Model_Force.o Model_Output.o Body.o Session.o
-X_bd = ../bin/GeomBD2
+X_bd = ../bin/GBD
 
 all : BD
 
