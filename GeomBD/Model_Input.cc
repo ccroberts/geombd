@@ -333,9 +333,9 @@ void Model::parseReceptorPQR(string rfn) {
       double rd = stringToDouble(line.substr(69, 6));
       cout << rd << endl;
       radii.push_back(rd);
-      double x = stringToDouble(line.substr(30, 8));
-      double y = stringToDouble(line.substr(38, 8));
-      double z = stringToDouble(line.substr(46, 8));
+      double x = stringToDouble(line.substr(30, 10));
+      double y = stringToDouble(line.substr(40, 10));
+      double z = stringToDouble(line.substr(50, 10));
       rx.push_back(x);
       ry.push_back(y);
       rz.push_back(z);
@@ -409,9 +409,9 @@ void Model::parseLigandPQR(string lfn) {
       bj = new Bead();
 
       char element = line[13];
-      double x = stringToDouble(line.substr(30, 8));
-      double y = stringToDouble(line.substr(38, 8));
-      double z = stringToDouble(line.substr(46, 8));
+      double x = stringToDouble(line.substr(30, 10));
+      double y = stringToDouble(line.substr(40, 10));
+      double z = stringToDouble(line.substr(50, 10));
       double q = stringToDouble(line.substr(70, 7));
       string at_raw = line.substr(12, 4);
       string at = trim(at_raw);
