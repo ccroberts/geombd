@@ -100,24 +100,8 @@ void Model::integrate() {
       radius2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
       if(onGrid) {
         double r_max = 0.5;
-        /*
         double mF = vertex_magnitude(Bi->F);
         Bi->dt = min(dt_fine, (r_max*kB*T)/(Bi->D * mF));
-        if(Bi->dt == 0. or Bi->dt > dt_fine) Bi->dt = dt_fine;//for first time adaptation
-        */
-        double mF = vertex_magnitude(Bi->F);
-        if(fabs(mF - Bi->mF) > 2. and Bi->dt > 0.0001) {
-          Bi->restore();
-          Bi->dt /= 2.0;
-          if(Bi->dt < 0.0001) Bi->dt = 0.0001;
-        } else {
-          Bi->mF = mF;
-          if(Bi->dt < dt_fine) {
-            Bi->dt = min(dt_fine, Bi->dt * 2.0);
-          } else {
-            Bi->dt = dt_fine;
-          }
-        }
       } else {
         if(radius2 > dt_scale_start and radius2 < dt_scale_end) {
           double s = (radius2 - dt_scale_start) / (dt_scale_end - dt_scale_start);
