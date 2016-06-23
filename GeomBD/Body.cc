@@ -119,7 +119,7 @@ void Body::define() {
     model->lout << "! Warning: You're using a Body object outside the context of a Model. Diffusion coefficients not calculated." << endl;
   }
 
-  cout << ">> m=" << m << " I=" << I << " r=" << r << " r_max=" << r_max << " D=" << D << " Da=" << Da << endl;
+  cout << ">> R=(" << R.x << ", " << R.y << ", " << R.z << ") m=" << m << " I=" << I << " r=" << r << " r_max=" << r_max << " D=" << D << " Da=" << Da << endl;
 }
 
 
