@@ -30,6 +30,11 @@ Model::Model() {
 
 Model::Model(string inputfn, string outputfn, string logfn) : Model() {
   ifn = inputfn;
+  if(!file_exists(ifn)) {
+    cout << "! Input file \"" << ifn "\" does not exist. Exiting." << endl;
+    exit(EXIT_FAILURE);
+  }
+
   ofn = outputfn;
   lfn = logfn;
   lout.open(lfn, ios_base::out);
@@ -39,7 +44,6 @@ Model::Model(string inputfn, string outputfn, string logfn) : Model() {
 
   populateLigands();
   initializeRNG(time(NULL));
-
 }
 
 
