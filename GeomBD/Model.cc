@@ -31,7 +31,7 @@ Model::Model() {
 Model::Model(string inputfn, string outputfn, string logfn) : Model() {
   ifn = inputfn;
   if(!file_exists(ifn)) {
-    cout << "! Input file \"" << ifn "\" does not exist. Exiting." << endl;
+    cout << "! Input file \"" << ifn << "\" does not exist. Exiting." << endl;
     exit(EXIT_FAILURE);
   }
 
