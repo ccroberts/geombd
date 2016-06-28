@@ -9,7 +9,7 @@ void Model::integrate() {
 
   generateNormal();
 
-  /*cilk_*/for(int il=0; il < ligands.size(); il++) {
+  cilk_for(int il=0; il < ligands.size(); il++) {
     Body *Bi = ligands[il];
 
     //if(! Bi->done) {

@@ -29,6 +29,11 @@ Body::Body() {
   t_dwell = 0.;
   t_dwell_max = 0.;
   t_dwell_total = 0.;
+
+  r = 0.;
+  r_max = 0.;
+
+  mF = 0.;
 }
 
 
