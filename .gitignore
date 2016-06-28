@@ -1,5 +1,6 @@
 *.o
 bin/*
 Example/*.bpm
+Example/TEST*
 Example/*.pqr
 Gridder/old/

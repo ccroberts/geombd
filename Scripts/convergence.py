@@ -37,23 +37,24 @@ for line in open(sys.argv[1], 'r'):
   if line.startswith(' + Binding criteria'):
     x[sid].append([])
     y[sid].append([])
-  if line.startswith("   (session") and sp[1][-1] == ')':
-    sid = int(sp[1][:-1]) - 1
-    kon = float(sp[4])
-    bnd = float(sp[8].split('=')[1])
-    num = float(sp[9].split('=')[1])
-    #bta = bnd/num
-    x[sid][0].append(num)
-    y[sid][0].append(kon)#bnd/num)
-  if line.startswith("   (session") and sp[2] == 'bs':
-    sid = int(sp[1]) - 1
-    bsid = int(sp[3][:-1]) + 1
-    kon = float(sp[6])
-    bnd = float(sp[10].split('=')[1])
-    num = int(sp[11].split('=')[1])
-    #bta = bnd/num
-    x[sid][bsid].append(num)
-    y[sid][bsid].append(kon)#bnd/num)
+  if line.startswith("   (session"):
+    if sp[2].startswith('b='):
+      pass #continue?
+    elif sp[1][-1] == ')':
+      sid = int(sp[1][:-1]) - 1
+      kon = float(sp[4])
+      bnd = float(sp[6].split('=')[1])
+      num = float(sp[7].split('=')[1])
+      x[sid][0].append(num)
+      y[sid][0].append(kon)
+    elif sp[2] == 'bs':
+      sid = int(sp[1]) - 1
+      bsid = int(sp[3][:-1]) + 1
+      kon = float(sp[6])
+      bnd = float(sp[8].split('=')[1])
+      num = int(sp[9].split('=')[1])
+      x[sid][bsid].append(num)
+      y[sid][bsid].append(kon)
 
 
 def running_stdev(x, y, w):

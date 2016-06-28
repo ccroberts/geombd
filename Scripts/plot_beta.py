@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.6
 
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 #import numpy as np
 import sys
@@ -33,6 +33,8 @@ for line in open(sys.argv[1], 'r'):
     x[sid].append([])
     y[sid].append([])
   if line.startswith("   (session") and sp[1][-1] == ')':
+    if sp[2].startswith('b='):
+      continue
     sid = int(sp[1][:-1]) - 1
     #kon = float(sp[4])
     bnd = float(sp[6].split('=')[1])
@@ -69,6 +71,6 @@ if yrange != None:
 #plt.tight_layout();
 
 #plt.title(sys.argv[1])
-#plt.show()
-fig = matplotlib.pyplot.gcf()
-fig.savefig(sys.argv[2], dpi=300)
+plt.show()
+#fig = matplotlib.pyplot.gcf()
+#fig.savefig(sys.argv[2], dpi=300)
