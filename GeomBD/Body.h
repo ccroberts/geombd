@@ -50,7 +50,7 @@ class Body {
     virtual void restore();
 
   public:
-    virtual bool translate(double dx, double dy, double dz);
+    virtual void translate(double dx, double dy, double dz);
     virtual void center();
     virtual void rotate(double dax, double day, double daz);
 

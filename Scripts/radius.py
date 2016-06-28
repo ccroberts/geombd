@@ -44,9 +44,9 @@ def calc():
 
 for line in open(sys.argv[1], 'r'):
   if line.startswith('ATOM'):
-    x = float(line[30:38])
-    y = float(line[38:46])
-    z = float(line[46:54])
+    x = float(line[30:40])
+    y = float(line[40:50])
+    z = float(line[50:60])
     coords.append([x,y,z])
     center[0] += x
     center[1] += y

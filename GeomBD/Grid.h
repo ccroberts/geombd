@@ -153,138 +153,86 @@ class Grid {
 
       /* Using central difference with first/second/third order approximation to first derivative */
       /* x axis */
-      R->x += step; 
-      if(! approximate_potential(R, &te[0])) return false;
+      vertex e_v = *R;
+      e_v.x += step; 
+      if(! approximate_potential(&e_v, &te[0])) return false;
       if(order >= 2) {
-        R->x += step; 
-        if(! approximate_potential(R, &te2[0])) return false;
+        e_v.x += step; 
+        if(! approximate_potential(&e_v, &te2[0])) return false;
       }
       if(order >= 3) {
-        R->x += step; 
-        if(! approximate_potential(R, &te3[0])) return false;
+        e_v.x += step; 
+        if(! approximate_potential(&e_v, &te3[0])) return false;
       }
-      if(order == 1) R->x -= twostep;
-      if(order == 2) R->x -= threestep;
-      if(order == 3) R->x -= fourstep;
-      if(! approximate_potential(R, &te[1])) return false;
+      e_v = *R;
+      e_v.x -= step;
+      if(! approximate_potential(&e_v, &te[1])) return false;
       if(order >= 2) {
-        R->x -= step;
-        if(! approximate_potential(R, &te2[1])) return false;
+        e_v.x -= step;
+        if(! approximate_potential(&e_v, &te2[1])) return false;
       }
       if(order >= 3) {
-        R->x -= step;
-        if(! approximate_potential(R, &te3[1])) return false;
+        e_v.x -= step;
+        if(! approximate_potential(&e_v, &te3[1])) return false;
       }
-      if(order == 1) {
-        dU[0] = scale * (te[1] - te[0]) / twostep;
-        R->x += step;
-      }
-      if(order == 2) {
-        dU[0] = scale * ((8. * (te[1] - te[0])) - (te2[1] - te2[0])) / twelvestep;
-        R->x += twostep;
-      }
-      if(order == 3) {
-        dU[0] = scale * ((45. * (te[1] - te[0])) - (9. * (te2[1] - te2[0])) + (te3[1] - te3[0])) / sixtystep;
-        R->x -= threestep;
-      }
+      if(order == 1) dU[0] = scale * (te[1] - te[0]) / twostep;
+      if(order == 2) dU[0] = scale * ((8. * (te[1] - te[0])) - (te2[1] - te2[0])) / twelvestep;
+      if(order == 3) dU[0] = scale * ((45. * (te[1] - te[0])) - (9. * (te2[1] - te2[0])) + (te3[1] - te3[0])) / sixtystep;
 
       /* y axis */
-      R->y += step; 
-      if(! approximate_potential(R, &te[0])) return false;
+      e_v = *R;
+      e_v.y += step; 
+      if(! approximate_potential(&e_v, &te[0])) return false;
       if(order >= 2) {
-        R->y += step; 
-        if(! approximate_potential(R, &te2[0])) return false;
+        e_v.y += step; 
+        if(! approximate_potential(&e_v, &te2[0])) return false;
       }
       if(order >= 3) {
-        R->y += step; 
-        if(! approximate_potential(R, &te3[0])) return false;
+        e_v.y += step; 
+        if(! approximate_potential(&e_v, &te3[0])) return false;
       }
-      if(order == 1) R->y -= twostep;
-      if(order == 2) R->y -= threestep;
-      if(order == 3) R->y -= fourstep;
-      if(! approximate_potential(R, &te[1])) return false;
+      e_v = *R;
+      e_v.y -= step;
+      if(! approximate_potential(&e_v, &te[1])) return false;
       if(order >= 2) {
-        R->y -= step;
-        if(! approximate_potential(R, &te2[1])) return false;
+        e_v.y -= step;
+        if(! approximate_potential(&e_v, &te2[1])) return false;
       }
       if(order >= 3) {
-        R->y -= step;
-        if(! approximate_potential(R, &te3[1])) return false;
+        e_v.y -= step;
+        if(! approximate_potential(&e_v, &te3[1])) return false;
       }
-      if(order == 1) {
-        dU[1] = scale * (te[1] - te[0]) / twostep;
-        R->y += step;
-      }
-      if(order == 2) {
-        dU[1] = scale * ((8. * (te[1] - te[0])) - (te2[1] - te2[0])) / twelvestep;
-        R->y += twostep;
-      }
-      if(order == 3) {
-        dU[1] = scale * ((45. * (te[1] - te[0])) - (9. * (te2[1] - te2[0])) + (te3[1] - te3[0])) / sixtystep;
-        R->y -= threestep;
-      }
+      if(order == 1) dU[1] = scale * (te[1] - te[0]) / twostep;
+      if(order == 2) dU[1] = scale * ((8. * (te[1] - te[0])) - (te2[1] - te2[0])) / twelvestep;
+      if(order == 3) dU[1] = scale * ((45. * (te[1] - te[0])) - (9. * (te2[1] - te2[0])) + (te3[1] - te3[0])) / sixtystep;
 
       /* z axis */
-      R->z += step; 
-      if(! approximate_potential(R, &te[0])) return false;
+      e_v = *R;
+      e_v.z += step; 
+      if(! approximate_potential(&e_v, &te[0])) return false;
       if(order >= 2) {
-        R->z += step; 
-        if(! approximate_potential(R, &te2[0])) return false;
+        e_v.z += step; 
+        if(! approximate_potential(&e_v, &te2[0])) return false;
       }
       if(order >= 3) {
-        R->z += step; 
-        if(! approximate_potential(R, &te3[0])) return false;
+        e_v.z += step; 
+        if(! approximate_potential(&e_v, &te3[0])) return false;
       }
-      if(order == 1) R->z -= twostep;
-      if(order == 2) R->z -= threestep;
-      if(order == 3) R->z -= fourstep;
-      if(! approximate_potential(R, &te[1])) return false;
+      e_v = *R;
+      e_v.z -= step;
+      if(! approximate_potential(&e_v, &te[1])) return false;
       if(order >= 2) {
-        R->z -= step;
-        if(! approximate_potential(R, &te2[1])) return false;
+        e_v.z -= step;
+        if(! approximate_potential(&e_v, &te2[1])) return false;
       }
       if(order >= 3) {
-        R->z -= step;
-        if(! approximate_potential(R, &te3[1])) return false;
+        e_v.z -= step;
+        if(! approximate_potential(&e_v, &te3[1])) return false;
       }
-      if(order == 1) {
-        dU[2] = scale * (te[1] - te[0]) / twostep;
-        R->z += step;
-      }
-      if(order == 2) {
-        dU[2] = scale * ((8. * (te[1] - te[0])) - (te2[1] - te2[0])) / twelvestep;
-        R->z += twostep;
-      }
-      if(order == 3) {
-        dU[2] = scale * ((45. * (te[1] - te[0])) - (9. * (te2[1] - te2[0])) + (te3[1] - te3[0])) / sixtystep;
-        R->z -= threestep;
-      }
+      if(order == 1) dU[1] = scale * (te[1] - te[0]) / twostep;
+      if(order == 2) dU[1] = scale * ((8. * (te[1] - te[0])) - (te2[1] - te2[0])) / twelvestep;
+      if(order == 3) dU[1] = scale * ((45. * (te[1] - te[0])) - (9. * (te2[1] - te2[0])) + (te3[1] - te3[0])) / sixtystep;
 
-      /*
-      // y axis
-      R->y += step; 
-      if(! approximate_potential(R, &te[0])) return false;
-      R->y += step; 
-      if(! approximate_potential(R, &te2[0])) return false;
-      R->y -= threestep;
-      if(! approximate_potential(R, &te[1])) return false;
-      R->y -= step;
-      if(! approximate_potential(R, &te2[1])) return false;
-      R->y += twostep;
-      dU[1] = ((8. * (te[1] - te[0])) - (te2[1] - te2[0])) / twelvestep;
-
-      // z axis
-      R->z += step; 
-      if(! approximate_potential(R, &te[0])) return false;
-      R->z += step; 
-      if(! approximate_potential(R, &te2[0])) return false;
-      R->z -= threestep;
-      if(! approximate_potential(R, &te[1])) return false;
-      R->z -= step;
-      if(! approximate_potential(R, &te2[1])) return false;
-      R->z += twostep;
-      dU[2] = ((8. * (te[1] - te[0])) - (te2[1] - te2[0])) / twelvestep;
-      */
 
       if(e) *e += E;
 

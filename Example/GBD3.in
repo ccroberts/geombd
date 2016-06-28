@@ -1,6 +1,7 @@
 temperature 298.15
 timestep 0.1 1.0 75 500
 threads 20
+writetraj 5000
 
 receptor HRP.pqr
 grid es HRP_TMB-es.bpm
@@ -9,7 +10,7 @@ grid N HRP_TMB-N.bpm
 grid H HRP_TMB-H.bpm
 
 associate
-  ligand TMB.pqr 10000
+  ligand TMB.pqr 5000
   b 100
   q 500
   bindor  -1.8680 0.6040 31.2880  9  12.0    -1.8680 0.6040 31.2880  36  12.0

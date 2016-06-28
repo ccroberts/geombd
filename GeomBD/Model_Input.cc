@@ -331,7 +331,6 @@ void Model::parseReceptorPQR(string rfn) {
       string at_raw = line.substr(12, 4);
       string at = trim(at_raw);
       double rd = stringToDouble(line.substr(69, 6));
-      cout << rd << endl;
       radii.push_back(rd);
       double x = stringToDouble(line.substr(30, 10));
       double y = stringToDouble(line.substr(40, 10));
@@ -416,7 +415,6 @@ void Model::parseLigandPQR(string lfn) {
       string at_raw = line.substr(12, 4);
       string at = trim(at_raw);
       bj->r = stringToDouble(line.substr(69, 6));
-      cout << bj->r << endl;
 
       //TODO: Complete table
       if(at == "C") bj->m = 12.;

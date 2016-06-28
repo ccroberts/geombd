@@ -9,7 +9,7 @@ void Model::integrate() {
 
   generateNormal();
 
-  cilk_for(int il=0; il < ligands.size(); il++) {
+  /*cilk_*/for(int il=0; il < ligands.size(); il++) {
     Body *Bi = ligands[il];
 
     //if(! Bi->done) {
@@ -113,7 +113,8 @@ void Model::integrate() {
       }
 
       // Backup coordinates in case of interpenetration
-      Bi->save();
+      if(exmaps.size() > 0)
+        Bi->save();
 
       // Integrate
       vertex *Si = &rand[il];
@@ -126,9 +127,7 @@ void Model::integrate() {
       dR.x = (A * Si->x) + (B * Bi->F.x);
       dR.y = (A * Si->y) + (B * Bi->F.y);
       dR.z = (A * Si->z) + (B * Bi->F.z);
-      if(! Bi->translate(dR.x, dR.y, dR.z)) {
-        cout << "this shouldn't happen (5A step" << endl;
-      }
+      Bi->translate(dR.x, dR.y, dR.z);
 
       double C = sqrt(2 * Bi->Da * Bi->dt);
       double D = Bi->Da * dtOVERkBT;
@@ -148,12 +147,9 @@ void Model::integrate() {
           }
         }
         if(penetrating) {
+          Bi->restore();
+          continue;
         }
-      }
-      // Excluded step, do not increment time
-      if(penetrating) {
-        Bi->restore();
-        continue;
       }
 
       // Increment time, record dwell-time

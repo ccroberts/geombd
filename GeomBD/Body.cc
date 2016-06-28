@@ -9,17 +9,26 @@ Body::Body() {
   model = NULL;
   session = NULL;
 
+  N = 0;
+
+  m = 0;
+  I = 0;
+  D = 0;
+  Da = 0;
+  R.x = Ra.y = Ra.z = 0.;
+  Ra.x = Ra.y = Ra.z = 0.;
+  F.x = Fa.y = Fa.z = 0.;
+  Fa.x = Fa.y = Fa.z = 0.;
+  mF = 0.;
+  r = 0;
+  r_max = 0;
+
   t = 0.;
   dt = 0.;
 
   t_dwell = 0.;
   t_dwell_max = 0.;
   t_dwell_total = 0.;
-
-  r = 0.;
-  r_max = 0.;
-
-  mF = 0.;
 }
 
 
@@ -42,9 +51,10 @@ void Body::define() {
   I = 0;
   D = 0;
   Da = 0;
-  R.x = 0;
-  R.y = 0;
-  R.z = 0;
+  R.x = Ra.y = Ra.z = 0.;
+  Ra.x = Ra.y = Ra.z = 0.;
+  F.x = Fa.y = Fa.z = 0.;
+  Fa.x = Fa.y = Fa.z = 0.;
   r = 0;
   r_max = 0;
 
@@ -166,7 +176,7 @@ void Body::restore() {
 
 
  
-bool Body::translate(double dx, double dy, double dz) {
+void Body::translate(double dx, double dy, double dz) {
   R.x += dx;
   R.y += dy;
   R.z += dz;
@@ -175,8 +185,6 @@ bool Body::translate(double dx, double dy, double dz) {
     Bead *bi = beads[i];
     bi->translate(dx, dy, dz);
   }
-
-  return true;
 }
 
 
@@ -211,18 +219,18 @@ void writePDBBead(Bead *bi, unt index, char chain, fstream &outf) {
   outf << "        ";
   outf.width(8);
   outf.precision(3);
-  outf << fixed << bi->R.x/1.;
+  outf << fixed << bi->R.x;
   outf.width(8);
   outf.precision(3);
-  outf << fixed << bi->R.y/1.;
+  outf << fixed << bi->R.y;
   outf.width(8);
   outf.precision(3);
-  outf << fixed << bi->R.z/1.;
+  outf << fixed << bi->R.z;
   outf << " ";
   outf.setf(ios::right, ios::adjustfield);
   outf.precision(4);
   outf.width(7);
-  outf << bi->q << " " << (bi->r/1.);
+  outf << bi->q << " " << (bi->r);
   outf << endl;
 }
 
