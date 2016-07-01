@@ -62,12 +62,9 @@ for line in open(sys.argv[1], 'r'):
     bnd = float(sp[8].split('=')[1])
     num = int(sp[9].split('=')[1])
     bta = bnd/num
-    try:
-      x[sid][bsid].append(num)
-      y[sid][bsid].append(kon)
-      b[sid][bsid].append(bnd)
-    except:
-      pass
+    x[sid][bsid].append(num)
+    y[sid][bsid].append(kon)
+    b[sid][bsid].append(bnd)
 
 window = 100
 if b_stotal:
@@ -96,8 +93,6 @@ else:
         Y = y[i][j]
         label = 'Session %d BS %d - k = %.1e' % (i+1, j-1, sum(Y[-window:])/len(Y[-window:]))
         plt.plot(X, Y, label=label)
-        for i in range(0, len(X), 2):
-          print X[i], Y[i]
 
 plt.legend(loc='upper right', prop={'size':12})
 plt.ylabel('Rate Constant', fontsize=16)
