@@ -29,7 +29,7 @@ for line in open(sys.argv[1], 'r'):
     x.append([ [] ])
     y.append([ [] ])
     sid += 1
-  if line.startswith(' + Binding criteria'):
+  if line.startswith('* Binding criteria') or line.startswith(' + Binding criteria'):
     x[sid].append([])
     y[sid].append([])
   if line.startswith("   (session") and sp[1][-1] == ')':

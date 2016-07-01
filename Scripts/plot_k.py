@@ -38,7 +38,7 @@ for line in open(sys.argv[1], 'r'):
     y.append([ [] ])
     b.append([ [] ])
     sid += 1
-  if line.startswith(' + Binding criteria'):
+  if line.startswith('* Binding criteria') or line.startswith(' + Binding criteria'):
     x[sid].append([])
     y[sid].append([])
     b[sid].append([])
@@ -62,9 +62,12 @@ for line in open(sys.argv[1], 'r'):
     bnd = float(sp[8].split('=')[1])
     num = int(sp[9].split('=')[1])
     bta = bnd/num
-    x[sid][bsid].append(num)
-    y[sid][bsid].append(kon)
-    b[sid][bsid].append(bnd)
+    try:
+      x[sid][bsid].append(num)
+      y[sid][bsid].append(kon)
+      b[sid][bsid].append(bnd)
+    except:
+      print sid, bsid
 
 window = 100
 if b_stotal:

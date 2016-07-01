@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.6
 
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 #import numpy as np
 import sys, math
@@ -74,7 +74,7 @@ def running_stdev(x, y, w):
   return X, Y, M
 
 
-for window in [100, 1000, 10000]:
+for window in [100, 1000]:
   if b_stotal:
     for ci in range(len(r_stotal) - 1):
       newy = []
@@ -109,6 +109,6 @@ plt.ylabel('Rate Constant Coefficient of Variation (%)', fontsize=16)
 plt.xlabel('Completed Substrate Replicate Simulations', fontsize=16)
 
 plt.title(sys.argv[1])
-#plt.show()
-fig = matplotlib.pyplot.gcf()
-fig.savefig(sys.argv[2], dpi=300)
+plt.show()
+#fig = matplotlib.pyplot.gcf()
+#fig.savefig(sys.argv[2], dpi=300)

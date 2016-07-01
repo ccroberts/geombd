@@ -3,4 +3,5 @@ bin/*
 Example/*.bpm
 Example/TEST*
 Example/*.pqr
+Example/*.log
 Gridder/old/
