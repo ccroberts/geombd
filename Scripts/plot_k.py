@@ -67,7 +67,7 @@ for line in open(sys.argv[1], 'r'):
       y[sid][bsid].append(kon)
       b[sid][bsid].append(bnd)
     except:
-      print sid, bsid
+      pass
 
 window = 100
 if b_stotal:
