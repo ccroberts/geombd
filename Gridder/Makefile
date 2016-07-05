@@ -7,6 +7,9 @@ LDFLAGS = -lcilkrts -openmp
 O_gLJ = Gridder-LJ.o 
 X_gLJ = ../bin/Gridder-LJ
 		
+O_fLJ = FGridLJ.o 
+X_fLJ = ../bin/FGridLJ
+		
 O_gEX = Gridder-EX.o 
 X_gEX = ../bin/Gridder-EX
 		
@@ -19,10 +22,13 @@ X_gBPM2DX = ../bin/bpm2dx
 O_gBXM2DX = bxm2dx.o
 X_gBXM2DX = ../bin/bxm2dx
 
-all : gLJ gEX gES gBPM2DX gBXM2DX
+all : gLJ gEX gES gBPM2DX gBXM2DX fLJ
 
 gLJ: $(O_gLJ) $(C_gLJ)
 	$(CC) $(CFLAGS) $(O_gLJ) $(C_gLJ) -o $(X_gLJ) $(LDFLAGS)
+
+fLJ: $(O_fLJ) $(C_fLJ)
+	$(CC) $(CFLAGS) $(O_fLJ) $(C_fLJ) -o $(X_fLJ) $(LDFLAGS)
 
 gEX: $(O_gEX) $(C_gEX)
 	$(CC) $(CFLAGS) $(O_gEX) $(C_gEX) -o $(X_gEX) $(LDFLAGS)

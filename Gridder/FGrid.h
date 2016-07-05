@@ -219,7 +219,7 @@ class Map_Potential {
     double padding;
     double spacing;
 
-    double* data_t;
+    vertex* data_t;
     int type_t;
     ofstream *bpm_t;
     string filename;
@@ -236,7 +236,7 @@ class Map_Potential {
       padding = Arg_Padding;
       spacing = Arg_GridSpacing;
 
-      data_t = (double*)calloc(Npoints[2], sizeof(double));
+      data_t = (double*)calloc(Npoints[2], sizeof(vertex));
       if(!data_t) { cout << "! Error: Could not allocate memory for grid calculation." << endl; exit(EXIT_FAILURE); }
       filename = bpmfn;
       type_t = atom_type_index;

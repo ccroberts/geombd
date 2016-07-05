@@ -55,7 +55,6 @@ int main(int argc, char **argv) {
   sigaction(SIGQUIT, &action, NULL);
 
   // Create model
-  cout << "* Creating Model object..." << endl;
   model = new Model(fldfn, trjfn, logfn);
 
   model->lout << "* Starting simulation with " << model->Nthreads << " threads" << endl;

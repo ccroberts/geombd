@@ -2,7 +2,7 @@
 
 
 void usage() {
-  printf("Usage: Gridder-EX -r [Receptor.PQR] -o [Output Prefix] -n [N_THREADS] (-p [Padding=5A] -s [Spacing=1.0A])\n");
+  printf("Usage: Gridder-EX -r [Receptor.PQR] -o [Output Prefix] -n [N_THREADS] (-p [Padding=5A] -s [Spacing=1.0A] -x [RadiiScaling=1.0])\n");
 }
 
 
@@ -10,6 +10,7 @@ int main(int argc, char **argv) {
   string Arg, Arg_ReceptorFN, Arg_OutputPrefix;
   double Arg_Padding = 5, Arg_Padding2 = 5*5;
   double Arg_GridSpacing = 1.0;
+  double Arg_RadiiScaling = 1.0;
   double Arg_Ions[4] = { 0.001, 0.001, 0.0, 0.0 };//Molar
 
   // Obtain command line input
@@ -20,9 +21,15 @@ int main(int argc, char **argv) {
   if(getInputWithFlag(argc, argv, 'p', &Arg)) {
     Arg_Padding = stringToDouble(Arg);
     Arg_Padding2 = pow(Arg_Padding, 2);
+    cout << "> Padding: " << Arg_Padding << "A" << endl;
   }
   if(getInputWithFlag(argc, argv, 's', &Arg)) {
     Arg_GridSpacing = stringToDouble(Arg);
+    cout << "> Spacing: " << Arg_GridSpacing << "A" << endl;
+  }
+  if(getInputWithFlag(argc, argv, 'x', &Arg)) {
+    Arg_RadiiScaling = stringToDouble(Arg);
+    cout << "> Scaling radii by " << Arg_RadiiScaling << " fold." << endl;
   }
   if(getInputWithFlag(argc, argv, 'o', &Arg_OutputPrefix)) {
     cout << "> Output filename prefix: " << Arg_OutputPrefix << endl;
@@ -43,7 +50,7 @@ int main(int argc, char **argv) {
   }
 
   // Create exclusion map
-  Map_Exclusion *map_ex = new Map_Exclusion(rec, Arg_GridSpacing, Arg_Padding);
+  Map_Exclusion *map_ex = new Map_Exclusion(rec, Arg_GridSpacing, Arg_Padding, Arg_RadiiScaling, false);
   map_ex->calculate();
   map_ex->write(Arg_OutputPrefix);
 

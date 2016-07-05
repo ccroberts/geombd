@@ -12,7 +12,6 @@ void Model::integrate() {
   cilk_for(int il=0; il < ligands.size(); il++) {
     Body *Bi = ligands[il];
 
-    //if(! Bi->done) {
       bool onGrid = false, associated = false;
       double E;
 
@@ -99,9 +98,10 @@ void Model::integrate() {
       dr[2] = Bi->R.z - center.z;
       radius2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
       if(onGrid) {
-        double r_max = 0.5;
-        double mF = vertex_magnitude(Bi->F);
-        Bi->dt = min(dt_fine, (r_max*kB*T)/(Bi->D * mF));
+        //double r_max = 0.5;
+        //double mF = vertex_magnitude(Bi->F);
+        //Bi->dt = min(dt_fine, (r_max*kB*T)/(Bi->D * mF));
+        Bi->dt = dt_fine;
       } else {
         if(radius2 > dt_scale_start and radius2 < dt_scale_end) {
           double s = (radius2 - dt_scale_start) / (dt_scale_end - dt_scale_start);
@@ -146,10 +146,19 @@ void Model::integrate() {
             break;
           }
         }
-        if(penetrating) {
-          Bi->restore();
-          continue;
-        }
+      }
+      /*if(penetrating) {
+        Bi->restore();
+        continue;
+      }*/
+      if(penetrating) {
+        vertex Rcom = { Bi->R.x - center.x, Bi->R.y - center.y, Bi->R.z - center.z };
+        double Rcom_mag = sqrt(Rcom.x*Rcom.x + Rcom.y*Rcom.y + Rcom.z*Rcom.z);
+        double a_dot_b = Rcom.x*Bi->F.x + Rcom.y*Bi->F.y + Rcom.z*Bi->F.z;
+        double b_dot_b = Bi->F.x*Bi->F.x + Bi->F.y*Bi->F.y + Bi->F.z*Bi->F.z;
+        double b_mag = sqrt(b_dot_b);
+        double F_prj = (a_dot_b / b_dot_b) * b_mag;
+        Bi->mF = F_prj;
       }
 
       // Increment time, record dwell-time
@@ -187,6 +196,12 @@ void Model::integrate() {
       }
 
   }
+
+    for(int il=0; il < ligands.size(); il++) {
+      if(fabs(ligands[il]->mF) > 1e-6) {
+        cout << "F " << il << "\t" << ligands[il]->mF << endl;
+      }
+    }
 
   cilk_sync;
 }
