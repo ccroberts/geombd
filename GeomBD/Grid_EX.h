@@ -16,7 +16,7 @@ class Grid_EX {
     int Nt;
     double origin[3];
     double delta;
-    short ***data;
+    bool ***data;
 
   public:
     string type;
@@ -32,15 +32,15 @@ class Grid_EX {
       fd.read((char*)&delta, sizeof(double));
       Nt = N[0] * N[1] * N[2];
 
-      data = (short***)calloc(N[0], sizeof(short**));
+      data = (bool***)calloc(N[0], sizeof(bool**));
       for(int nx=0; nx < N[0]; nx++) {
-        data[nx] = (short**)calloc(N[1], sizeof(short*));              
+        data[nx] = (bool**)calloc(N[1], sizeof(bool*));              
         if(!data[nx]) {
           cout << "failed allocation\n";
           exit(EXIT_FAILURE);
         }
         for(int ny=0; ny < N[1]; ny++) {
-          data[nx][ny] = (short*)calloc(N[2], sizeof(short));              
+          data[nx][ny] = (bool*)calloc(N[2], sizeof(bool));              
           if(!data[nx][ny]) {
             cout << "failed allocation\n";
             exit(EXIT_FAILURE);
@@ -52,7 +52,7 @@ class Grid_EX {
       for(int nx=0; nx < N[0]; nx++) {
         for(int ny=0; ny < N[1]; ny++) {
           for(int nz=0; nz < N[2]; nz++) {
-            fd.read((char*)&data[nx][ny][nz], sizeof(short));
+            fd.read((char*)&data[nx][ny][nz], sizeof(bool));
           }
         }
       }
@@ -95,7 +95,7 @@ class Grid_EX {
       int grid[3];
       bool onGrid = coordinateToGrid(R, (int*)&grid);
       if(!onGrid) return 0;
-      return data[grid[0]][grid[1]][grid[2]];
+      return (data[grid[0]][grid[1]][grid[2]] ? 1 : 0);
     }
 
     void translate(double dx, double dy, double dz) {

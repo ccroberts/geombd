@@ -271,7 +271,7 @@ class Map_Exclusion {
     double scaling;
     bool include_padding;
 
-    Map_Exclusion(Molecule_PQRE *rec, double Arg_GridSpacing, double Arg_Padding, double Arg_Scaling=1.0, bool Use_Padding=false) {
+    Map_Exclusion(Molecule_PQRE *rec, double Arg_GridSpacing, double Arg_Padding, double Arg_Scaling=1.0, bool Use_Padding=true) {
       origin = { rec->min.x - Arg_Padding, rec->min.y - Arg_Padding, rec->min.z - Arg_Padding };
       dimensions = { (rec->max.x + Arg_Padding) - origin.x, (rec->max.y + Arg_Padding) - origin.y, (rec->max.z + Arg_Padding) - origin.z };
       Npoints[0] = dimensions.x / Arg_GridSpacing;

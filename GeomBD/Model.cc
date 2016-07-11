@@ -24,6 +24,9 @@ Model::Model() {
   //ending conditions
   convergence = 0.;
   max_simulations = -1;
+
+  //debug
+  debug_map = NULL;
 }
 
 

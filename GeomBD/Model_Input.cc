@@ -67,6 +67,11 @@ void Model::parseInputFile() {
               }
             }
       }
+      if(token == "debug") {
+        parseNextValue(&line, &token);
+        lout << "* Loading debug map \"" << token << "\"" << endl;
+        debug_map = new Grid_EX(token, "x");
+      }
       if(token == "threads") {
         parseNextValue(&line, &token);
         __cilkrts_set_param("nworkers", token.c_str());

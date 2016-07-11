@@ -58,6 +58,8 @@ class Model {
     vector< Grid_Type* > typemaps;
     vector< Grid_EX* > exmaps;
 
+    Grid_EX *debug_map;
+
     vertex center;
     double system_r;
     vertex bounds_min, bounds_max;

@@ -63,6 +63,20 @@ void Model::integrate() {
         }
       }
 
+      // Calculate force magnitude
+      vertex Rcom = { Bi->R.x - center.x, Bi->R.y - center.y, Bi->R.z - center.z };
+      double Rcom_mag = sqrt(Rcom.x*Rcom.x + Rcom.y*Rcom.y + Rcom.z*Rcom.z);
+      Rcom.x /= Rcom_mag;
+      Rcom.y /= Rcom_mag;
+      Rcom.z /= Rcom_mag;
+      vertex Fi = Bi->F;
+      double Fi_mag = sqrt(Fi.x*Fi.x + Fi.y*Fi.y + Fi.z*Fi.z);
+      Fi.x /= Fi_mag;
+      Fi.y /= Fi_mag;
+      Fi.z /= Fi_mag;
+      double Rcom_dot_Fi = Rcom.x*Fi.x + Rcom.y*Fi.y + Rcom.z*Fi.z;
+      double New_mF = Rcom_dot_Fi * Fi_mag;
+
 
       // Propogate bead forces to body
       Bi->F.x = 0.;
@@ -143,22 +157,28 @@ void Model::integrate() {
         for(int ex=0; ex < exmaps.size(); ex++) {
           if(exmaps[ex]->value(&bi->R) > 0) {
             penetrating = true;
-            break;
           }
         }
+        if(penetrating) break;
       }
-      /*if(penetrating) {
+      if(penetrating) {
         Bi->restore();
         continue;
-      }*/
-      if(penetrating) {
-        vertex Rcom = { Bi->R.x - center.x, Bi->R.y - center.y, Bi->R.z - center.z };
-        double Rcom_mag = sqrt(Rcom.x*Rcom.x + Rcom.y*Rcom.y + Rcom.z*Rcom.z);
-        double a_dot_b = Rcom.x*Bi->F.x + Rcom.y*Bi->F.y + Rcom.z*Bi->F.z;
-        double b_dot_b = Bi->F.x*Bi->F.x + Bi->F.y*Bi->F.y + Bi->F.z*Bi->F.z;
-        double b_mag = sqrt(b_dot_b);
-        double F_prj = (a_dot_b / b_dot_b) * b_mag;
-        Bi->mF = F_prj;
+      }
+      
+      // Debug check
+      bool debug_penetrate = false;
+      for(int i=0; i < Bi->beads.size(); i++) {
+        Bead *bi = Bi->beads[i];
+        if(debug_map->value(&bi->R) > 0) {
+          debug_penetrate = true;
+        }
+        if(debug_penetrate) break;
+      }
+      if(debug_penetrate) {
+        Bi->mF = New_mF;
+      } else {
+        Bi->mF = 0.;
       }
 
       // Increment time, record dwell-time
@@ -197,12 +217,11 @@ void Model::integrate() {
 
   }
 
+  if(step % 10000 == 0)
     for(int il=0; il < ligands.size(); il++) {
-      if(fabs(ligands[il]->mF) > 1e-6) {
+      if(fabs(ligands[il]->mF) > 0.1)
         cout << "F " << il << "\t" << ligands[il]->mF << endl;
-      }
     }
-
   cilk_sync;
 }
 

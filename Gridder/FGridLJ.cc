@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 
     string bpmfn = Arg_OutputPrefix;
     bpmfn.append(*it);
-    bpmfn.append(".bpm");
+    bpmfn.append(".bfm");
 
     maps_lj.push_back(new Map_Potential(bpmfn, type_index, rec, Arg_GridSpacing, Arg_Padding));
   }
@@ -100,7 +100,9 @@ int main(int argc, char **argv) {
 
 /* POTENTIAL-SPECIFIC */
         for(int i=0; i < maps_lj.size(); i++) {
-          maps_lj[i]->data_t[nz] = 0;
+          maps_lj[i]->data_t[nz].x = 0;
+          maps_lj[i]->data_t[nz].y = 0;
+          maps_lj[i]->data_t[nz].z = 0;
         }
 /**********************/
 
@@ -127,7 +129,7 @@ int main(int argc, char **argv) {
             double du_t;
             if(lig_type > rec_type) parm = params->lj_map[lig_type][rec_type];
             else parm = params->lj_map[rec_type][lig_type];
-            du_t = -6. * (((2.0*parm.A) / dist_14) - (parm.B / dist_8));
+            du_t = 6. * (((2.0*parm.A) / dist_14) - (parm.B / dist_8));
             maps_lj[i]->data_t[nz].x += dr.x * du_t;
             maps_lj[i]->data_t[nz].y += dr.y * du_t;
             maps_lj[i]->data_t[nz].z += dr.z * du_t;
@@ -137,11 +139,13 @@ int main(int argc, char **argv) {
 
         // Clamp potential value at 5000
 /* POTENTIAL-SPECIFIC */
+        /*
         for(int i=0; i < maps_lj.size(); i++) {
           if(maps_lj[i]->data_t[nz].x > 5000) maps_lj[i]->data_t[nz].x = 5000.;
           if(maps_lj[i]->data_t[nz].y > 5000) maps_lj[i]->data_t[nz].y = 5000.;
           if(maps_lj[i]->data_t[nz].z > 5000) maps_lj[i]->data_t[nz].z = 5000.;
         }
+        */
 /**********************/
       }
 

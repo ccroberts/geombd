@@ -133,10 +133,10 @@ int main(int argc, char **argv) {
         }
 /**********************************/
 
-        // Clamp potential value at 5000
+        // Clamp potential value at 9.
 /* POTENTIAL-SPECIFIC */
         for(int i=0; i < maps_lj.size(); i++) {
-          if(maps_lj[i]->data_t[nz] > 5000) maps_lj[i]->data_t[nz] = 5000.;
+          if(maps_lj[i]->data_t[nz] > 10.) maps_lj[i]->data_t[nz] = 10.;
         }
 /**********************/
       }
