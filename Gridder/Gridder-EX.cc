@@ -34,6 +34,8 @@ int main(int argc, char **argv) {
   if(getInputWithFlag(argc, argv, 'o', &Arg_OutputPrefix)) {
     cout << "> Output filename prefix: " << Arg_OutputPrefix << endl;
     Arg_OutputPrefix.append("ex.bxm");
+  } else {
+    Arg_OutputPrefix = "ex.bxm";
   }
 /* POTENTIAL-SPECIFIC */
 /**********************/
