@@ -167,18 +167,20 @@ void Model::integrate() {
       }
       
       // Debug check
-      bool debug_penetrate = false;
-      for(int i=0; i < Bi->beads.size(); i++) {
-        Bead *bi = Bi->beads[i];
-        if(debug_map->value(&bi->R) > 0) {
-          debug_penetrate = true;
+      if(debug_map) {
+        bool debug_penetrate = false;
+        for(int i=0; i < Bi->beads.size(); i++) {
+          Bead *bi = Bi->beads[i];
+          if(debug_map->value(&bi->R) > 0) {
+            debug_penetrate = true;
+          }
+          if(debug_penetrate) break;
         }
-        if(debug_penetrate) break;
-      }
-      if(debug_penetrate) {
-        Bi->mF = New_mF;
-      } else {
-        Bi->mF = 0.;
+        if(debug_penetrate) {
+          Bi->mF = New_mF;
+        } else {
+          Bi->mF = 0.;
+        }
       }
 
       // Increment time, record dwell-time
