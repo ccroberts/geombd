@@ -128,8 +128,8 @@ void Body::define() {
     // Define Dco
     double Pl = (kB * model->T) / (6. * M_PI * model->viscosity);
     double Pa = (kB * model->T) / (8. * M_PI * model->viscosity);
-    D  = (Pl / r) + (Pl / model->receptorRhyd);
-    Da = (Pa / pow(r, 3)) + (Pa / pow(model->receptorRhyd, 3));
+    D  = (Pl / r) + (Pl / model->receptor_radius);
+    Da = (Pa / pow(r, 3)) + (Pa / pow(model->receptor_radius, 3));
   } else {
     model->lout << "! Warning: You're using a Body object outside the context of a Model. Diffusion coefficients not calculated." << endl;
   }

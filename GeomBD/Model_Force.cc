@@ -28,7 +28,7 @@ void Model::integrate() {
         
         if(bi->q != 0.) {
           for(int es=0; es < esmaps.size(); es++) {
-            if(esmaps[es]->approximate_force(&bi->R, &dF, &E, 2, bi->q)) {
+            if(esmaps[es]->approximate_force(&bi->R, &dF, &E, fd_order, bi->q)) {
               onGrid = true;
               bi->F.x += dF.x;
               bi->F.y += dF.y;
@@ -36,7 +36,7 @@ void Model::integrate() {
             }
           }
           for(int ds=0; ds < dmaps.size(); ds++) {
-            if(dmaps[ds]->approximate_force(&bi->R, &dF, &E, 2, fabs(bi->q))) {
+            if(dmaps[ds]->approximate_force(&bi->R, &dF, &E, fd_order, fabs(bi->q))) {
               onGrid = true;
               bi->F.x += dF.x;
               bi->F.y += dF.y;
@@ -50,7 +50,7 @@ void Model::integrate() {
 
         for(int tmap=0; tmap < typemaps.size(); tmap++) {
           if(typemaps[tmap]->type == bi->type) {
-            if(typemaps[tmap]->approximate_force(&bi->R, &dF, &E, 2, 1.0)) {
+            if(typemaps[tmap]->approximate_force(&bi->R, &dF, &E, fd_order, 1.0)) {
               onGrid = true;
               if(fabs(E) > 0) {
                 associated = true;
@@ -66,14 +66,18 @@ void Model::integrate() {
       // Calculate force magnitude
       vertex Rcom = { Bi->R.x - center.x, Bi->R.y - center.y, Bi->R.z - center.z };
       double Rcom_mag = sqrt(Rcom.x*Rcom.x + Rcom.y*Rcom.y + Rcom.z*Rcom.z);
-      Rcom.x /= Rcom_mag;
-      Rcom.y /= Rcom_mag;
-      Rcom.z /= Rcom_mag;
+      if(Rcom_mag != 0.) {
+        Rcom.x /= Rcom_mag;
+        Rcom.y /= Rcom_mag;
+        Rcom.z /= Rcom_mag;
+      }
       vertex Fi = Bi->F;
       double Fi_mag = sqrt(Fi.x*Fi.x + Fi.y*Fi.y + Fi.z*Fi.z);
-      Fi.x /= Fi_mag;
-      Fi.y /= Fi_mag;
-      Fi.z /= Fi_mag;
+      if(Fi_mag != 0.) {
+        Fi.x /= Fi_mag;
+        Fi.y /= Fi_mag;
+        Fi.z /= Fi_mag;
+      }
       double Rcom_dot_Fi = Rcom.x*Fi.x + Rcom.y*Fi.y + Rcom.z*Fi.z;
       double New_mF = Rcom_dot_Fi * Fi_mag;
 
@@ -111,12 +115,13 @@ void Model::integrate() {
       dr[1] = Bi->R.y - center.y;
       dr[2] = Bi->R.z - center.z;
       radius2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
-      if(onGrid) {
+      /*if(onGrid) {
         //double r_max = 0.5;
         //double mF = vertex_magnitude(Bi->F);
         //Bi->dt = min(dt_fine, (r_max*kB*T)/(Bi->D * mF));
         Bi->dt = dt_fine;
       } else {
+      */
         if(radius2 > dt_scale_start and radius2 < dt_scale_end) {
           double s = (radius2 - dt_scale_start) / (dt_scale_end - dt_scale_start);
           Bi->dt = dt_fine + s * (dt_coarse - dt_fine);
@@ -124,7 +129,7 @@ void Model::integrate() {
           if(radius2 <= dt_scale_start) Bi->dt = dt_fine;
           if(radius2 >= dt_scale_end) Bi->dt = dt_coarse;
         }
-      }
+      /*}*/
 
       // Backup coordinates in case of interpenetration
       if(exmaps.size() > 0)
@@ -141,6 +146,7 @@ void Model::integrate() {
       dR.x = (A * Si->x) + (B * Bi->F.x);
       dR.y = (A * Si->y) + (B * Bi->F.y);
       dR.z = (A * Si->z) + (B * Bi->F.z);
+      if(vertex_magnitude(dR) > 1.) cout << "CAUTION: Translational step greater than 1A (|dR| = " << vertex_magnitude(dR) << " A) dt = " << Bi->dt << endl;
       Bi->translate(dR.x, dR.y, dR.z);
 
       double C = sqrt(2 * Bi->Da * Bi->dt);

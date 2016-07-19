@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
   // Create model
   model = new Model(fldfn, trjfn, logfn);
 
-  model->lout << "* Starting simulation with " << model->Nthreads << " threads" << endl;
+  model->lout << "* Starting simulation with " << model->threads << " threads" << endl;
   Timer *timer = new Timer();
   timer->start();
   model->run();

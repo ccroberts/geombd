@@ -229,9 +229,9 @@ class Grid {
         e_v.z -= step;
         if(! approximate_potential(&e_v, &te3[1])) return false;
       }
-      if(order == 1) dU[1] = scale * (te[1] - te[0]) / twostep;
-      if(order == 2) dU[1] = scale * ((8. * (te[1] - te[0])) - (te2[1] - te2[0])) / twelvestep;
-      if(order == 3) dU[1] = scale * ((45. * (te[1] - te[0])) - (9. * (te2[1] - te2[0])) + (te3[1] - te3[0])) / sixtystep;
+      if(order == 1) dU[2] = scale * (te[1] - te[0]) / twostep;
+      if(order == 2) dU[2] = scale * ((8. * (te[1] - te[0])) - (te2[1] - te2[0])) / twelvestep;
+      if(order == 3) dU[2] = scale * ((45. * (te[1] - te[0])) - (9. * (te2[1] - te2[0])) + (te3[1] - te3[0])) / sixtystep;
 
 
       if(e) *e += E;

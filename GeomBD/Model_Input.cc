@@ -84,13 +84,13 @@ void Model::parseInputFile() {
       }
       if(token == "writetraj") {
         parseNextValue(&line, &token);
-        Vtraj = stringToInt(token);
-        lout << "* Writing trajectory every " << Vtraj << " steps." << endl;
+        k_trj = stringToInt(token);
+        lout << "* Writing trajectory every " << k_trj << " steps." << endl;
       }
       if(token == "writelog") {
         parseNextValue(&line, &token);
-        Vprint = stringToInt(token);
-        lout << "* Writing association rate information to logfile every " << Vprint << " steps." << endl;
+        k_log = stringToInt(token);
+        lout << "* Writing association rate information to logfile every " << k_log << " steps." << endl;
       }
       if(token == "timestep") {
         parseNextValue(&line, &token);
@@ -102,6 +102,11 @@ void Model::parseInputFile() {
         parseNextValue(&line, &token);
         dt_scale_end = pow(stringToDouble(token), 2.);
         lout << "* Timesteps: fine="<<dt_fine<<" ps, coarse=" <<dt_coarse << " ps, scaling from a radius of " << sqrt(dt_scale_start) << "A to a radius of " << sqrt(dt_scale_end) << "A." <<endl;
+      }
+      if(token == "order") {
+        parseNextValue(&line, &token);
+        fd_order = stringToInt(token);
+        lout << "* Finite difference force approximation using order " << fd_order << "." << endl;
       }
       if(token == "receptor") {
         parseNextValue(&line, &token);
@@ -354,7 +359,7 @@ void Model::parseReceptorPQR(string rfn) {
   cr[2] /= rx.size();
 
   if(rx.size() == 1) {
-    receptorRhyd = radii[0];
+    receptor_radius = radii[0];
   } else {
     double rmsd = 0., dr = 0.;
 
@@ -368,7 +373,7 @@ void Model::parseReceptorPQR(string rfn) {
     }
 
     rmsd /= rx.size();
-    receptorRhyd = sqrt(rmsd);
+    receptor_radius = sqrt(rmsd);
     /*
     double invSumRij = 0.;
     //hydrodynamic radius
@@ -381,7 +386,7 @@ void Model::parseReceptorPQR(string rfn) {
       }
     }
 
-    receptorRhyd = 1.0 / (invSumRij / (rx.size()*rx.size()));
+    receptor_radius = 1.0 / (invSumRij / (rx.size()*rx.size()));
     */
   }
 
