@@ -81,7 +81,6 @@ void Model::integrate() {
       double Rcom_dot_Fi = Rcom.x*Fi.x + Rcom.y*Fi.y + Rcom.z*Fi.z;
       double New_mF = Rcom_dot_Fi * Fi_mag;
 
-
       // Propogate bead forces to body
       Bi->F.x = 0.;
       Bi->F.y = 0.;
@@ -115,21 +114,19 @@ void Model::integrate() {
       dr[1] = Bi->R.y - center.y;
       dr[2] = Bi->R.z - center.z;
       radius2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
-      /*if(onGrid) {
-        //double r_max = 0.5;
-        //double mF = vertex_magnitude(Bi->F);
-        //Bi->dt = min(dt_fine, (r_max*kB*T)/(Bi->D * mF));
-        Bi->dt = dt_fine;
+
+      if(radius2 > dt_scale_start and radius2 < dt_scale_end) {
+        double s = (radius2 - dt_scale_start) / (dt_scale_end - dt_scale_start);
+        Bi->dt = dt_fine + s * (dt_coarse - dt_fine);
       } else {
-      */
-        if(radius2 > dt_scale_start and radius2 < dt_scale_end) {
-          double s = (radius2 - dt_scale_start) / (dt_scale_end - dt_scale_start);
-          Bi->dt = dt_fine + s * (dt_coarse - dt_fine);
-        } else {
-          if(radius2 <= dt_scale_start) Bi->dt = dt_fine;
-          if(radius2 >= dt_scale_end) Bi->dt = dt_coarse;
+        if(radius2 <= dt_scale_start) {
+          Bi->dt = dt_fine;
+          if(New_mF < -0.5) {
+            Bi->dt /= (New_mF / -0.5);
+          }
         }
-      /*}*/
+        if(radius2 >= dt_scale_end) Bi->dt = dt_coarse;
+      }
 
       // Backup coordinates in case of interpenetration
       if(exmaps.size() > 0)
