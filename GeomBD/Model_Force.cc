@@ -121,8 +121,8 @@ void Model::integrate() {
       } else {
         if(radius2 <= dt_scale_start) {
           Bi->dt = dt_fine;
-          if(New_mF < -0.5) {
-            Bi->dt /= (New_mF / -0.5);
+          if(New_mF < -1.0) {
+            Bi->dt /= (New_mF / -1.0);
           }
         }
         if(radius2 >= dt_scale_end) Bi->dt = dt_coarse;
