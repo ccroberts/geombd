@@ -8,7 +8,8 @@ qt = 0.
 
 for line in open(pdbfn, 'r'):
   if line.startswith('ATOM') or line.startswith('HETATM'):
-    q = float(line[70:77])
+    sp = line.split()
+    q = float(sp[-2])
     qt += q
 
 print 'Total charge:', qt
