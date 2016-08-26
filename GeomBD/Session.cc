@@ -52,13 +52,15 @@ void Session::populateLigands() {
 
 void Session::recordBeta(double beta) {
   beta_history.push_back(beta);
-  while(beta_history.size() > 1000.) {
+  while(beta_history.size() > 100.) {
     beta_history.pop_front();
   }
 }
 
 
 void Session::checkConvergence() {
+  if(beta_history.size() < 100.) return;
+
   double m = 0., s = 0.;
   for(int i=0; i < beta_history.size(); i++) {
     m += beta_history[i];
@@ -132,9 +134,9 @@ void SessionRadial::printRateConstant() {
     model->lout << endl;
   }
 
+  double B = ((double)Nbind.get_value()) / ((double)Ndone);
+  recordBeta(B);
   if(bindingCriteria.size() > 1) {
-    double B = ((double)Nbind.get_value()) / ((double)Ndone);
-    recordBeta(B);
     double kb = 4. * M_PI * b * Davg;
     double k = (kb * B) / (1 - ((1 - B)*b/q));
     k *= Na * 1e12 * 1e-27;
@@ -207,9 +209,9 @@ void SessionAbsolutePeriodic::printRateConstant() {
     model->lout << endl;
   }
 
+  double B = ((double)Nbind.get_value()) / ((double)Ndone);
+  recordBeta(B);
   if(bindingCriteria.size() > 1) {
-    double B = ((double)Nbind.get_value()) / ((double)Ndone);
-    recordBeta(B);
     double V = bounds.x * bounds.y * bounds.z * LperA3;
     double C = (1. / Na) / V;
     double tavg = t_avgt.get_value() / Nbind.get_value();
@@ -282,9 +284,9 @@ void SessionAbsoluteRadial::printRateConstant() {
     model->lout << endl;
   }
 
+  double B = ((double)Nbind.get_value()) / ((double)Ndone);
+  recordBeta(B);
   if(bindingCriteria.size() > 1) {
-    double B = ((double)Nbind.get_value()) / ((double)Ndone);
-    recordBeta(B);
     double tavg = t_avgt.get_value() / Nbind.get_value();
     double k = B / (tavg * 1e-12);
 

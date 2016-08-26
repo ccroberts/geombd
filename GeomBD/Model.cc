@@ -98,7 +98,9 @@ void Model::run() {
     integrate();
     step++;
 
-    // Write trajectory and statistics every 'rate_trj' steps
+    if(step % rate_conv == 0) {
+      checkConvergence();
+    }
     if(step % rate_trj == 0) {
       writeCoordinatesPQR();
     }
@@ -107,9 +109,6 @@ void Model::run() {
       lout << "* Step " << step << " (" << (t.duration/rate_trj) << " s/step)" << endl;
       printRateConstant();
       t.start();
-    }
-    if(step % rate_conv == 0) {
-      checkConvergence();
     }
   }
 
@@ -135,6 +134,12 @@ void Model::checkConvergence() {
   for(int i=0; i < sessions.size(); i++) {
     sessions[i]->checkConvergence();
   }
+  // check to see if all sessions are done
+  bool _done = true;
+  for(int i=0; i < sessions.size(); i++) {
+    if(! sessions[i]->done) { _done = false; break; }
+  }
+  done = _done;
 }
 
 
