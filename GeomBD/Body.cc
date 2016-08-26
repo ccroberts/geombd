@@ -34,6 +34,8 @@ Body::Body() {
   r_max = 0.;
 
   mF = 0.;
+
+  done = false;
 }
 
 

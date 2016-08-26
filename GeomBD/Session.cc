@@ -13,6 +13,7 @@ Session::Session(Model *m, SimulationConfig s) {
   Nexit.set_value(0);
   Ntlim.set_value(0);
   Davg = 0.;
+  done = false;
 }
 
 Session::~Session() {
@@ -48,10 +49,31 @@ void Session::populateLigands() {
   Davg /= conformations.size();
 }
 
-void Session::positionLigand(Body *body) {
+
+void Session::recordBeta(double beta) {
+  beta_history.push_back(beta);
+  while(beta_history.size() > 1000.) {
+    beta_history.pop_front();
+  }
 }
 
-void Session::printRateConstant() {
+
+void Session::checkConvergence() {
+  double m = 0., s = 0.;
+  for(int i=0; i < beta_history.size(); i++) {
+    m += beta_history[i];
+  }
+  m /= beta_history.size();
+  if(m == 0) return;
+
+  for(int i=0; i < beta_history.size(); i++) {
+    s += pow(beta_history[i]-m, 2);
+  }
+  s = sqrt(s / beta_history.size());
+  if(s / m <= model->convergence) {
+    done = true;
+    for(int i=0; i < ligands.size(); i++) ligands[i]->done = true;
+  }
 }
 
 
@@ -81,6 +103,7 @@ void SessionRadial::positionLigand(Body *bi) {
 
 void SessionRadial::printRateConstant() {
   int Ndone = Nbind.get_value() + Nexit.get_value();
+
   if(Ndone == 0) {
     double kb = 4. * M_PI * b * Davg   *Na*1e12*1e-27;
     model->lout << "   (session " << id << ") ";
@@ -109,20 +132,23 @@ void SessionRadial::printRateConstant() {
     model->lout << endl;
   }
 
-  double B = ((double)Nbind.get_value()) / ((double)Ndone);
-  double kb = 4. * M_PI * b * Davg;
-  double k = (kb * B) / (1 - ((1 - B)*b/q));
-  k *= Na * 1e12 * 1e-27;
-  model->lout << "   (session " << id << ") ";
-  model->lout << "k_on = " << k << " M⁻¹s⁻¹ ";
-  model->lout << "Nbind=" << Nbind.get_value() << " ";
-  model->lout << "Ndone=" << Ndone << " ";
-  model->lout << "β=" << B << " ";
-  model->lout << "b=" << b << " ";
-  model->lout << "kd(b)=" << kb * Na * 1e12 * 1e-27 << " ";
-  model->lout << "q=" << q << " ";
-  model->lout << "Davg=" << Davg << " ";
-  model->lout << endl;
+  if(bindingCriteria.size() > 1) {
+    double B = ((double)Nbind.get_value()) / ((double)Ndone);
+    recordBeta(B);
+    double kb = 4. * M_PI * b * Davg;
+    double k = (kb * B) / (1 - ((1 - B)*b/q));
+    k *= Na * 1e12 * 1e-27;
+    model->lout << "   (session " << id << ") ";
+    model->lout << "k_on = " << k << " M⁻¹s⁻¹ ";
+    model->lout << "Nbind=" << Nbind.get_value() << " ";
+    model->lout << "Ndone=" << Ndone << " ";
+    model->lout << "β=" << B << " ";
+    model->lout << "b=" << b << " ";
+    model->lout << "kd(b)=" << kb * Na * 1e12 * 1e-27 << " ";
+    model->lout << "q=" << q << " ";
+    model->lout << "Davg=" << Davg << " ";
+    model->lout << endl;
+  }
 
   if(model->max_simulations > 0 and Ndone >= model->max_simulations) {
     cout << "> Maximum simulations reached. Exiting." << endl;
@@ -181,15 +207,18 @@ void SessionAbsolutePeriodic::printRateConstant() {
     model->lout << endl;
   }
 
-  double B = ((double)Nbind.get_value()) / ((double)Ndone);
-  double V = bounds.x * bounds.y * bounds.z * LperA3;
-  double C = (1. / Na) / V;
-  double tavg = t_avgt.get_value() / Nbind.get_value();
+  if(bindingCriteria.size() > 1) {
+    double B = ((double)Nbind.get_value()) / ((double)Ndone);
+    recordBeta(B);
+    double V = bounds.x * bounds.y * bounds.z * LperA3;
+    double C = (1. / Na) / V;
+    double tavg = t_avgt.get_value() / Nbind.get_value();
 
-  double rate = B * C / (tavg * 1e-12);
+    double rate = B * C / (tavg * 1e-12);
 
-  printf("   (session %d)   rate = %.5e Ms⁻¹ (Nbind=%d Ndone=%d β=%.4f C=%.1f k=%.5e s⁻¹ tavg=%.5e Davg=%.5e)", id, rate, Nbind.get_value(), Ndone, B, C, B / (tavg * 1e-12), tavg, Davg);
-  model->lout << endl;
+    printf("   (session %d)   rate = %.5e Ms⁻¹ (Nbind=%d Ndone=%d β=%.4f C=%.1f k=%.5e s⁻¹ tavg=%.5e Davg=%.5e)", id, rate, Nbind.get_value(), Ndone, B, C, B / (tavg * 1e-12), tavg, Davg);
+    model->lout << endl;
+  }
 
   if(model->max_simulations > 0 and Ndone >= model->max_simulations) {
     cout << "> Maximum simulations reached. Exiting." << endl;
@@ -253,19 +282,22 @@ void SessionAbsoluteRadial::printRateConstant() {
     model->lout << endl;
   }
 
-  double B = ((double)Nbind.get_value()) / ((double)Ndone);
-  double tavg = t_avgt.get_value() / Nbind.get_value();
-  double k = B / (tavg * 1e-12);
+  if(bindingCriteria.size() > 1) {
+    double B = ((double)Nbind.get_value()) / ((double)Ndone);
+    recordBeta(B);
+    double tavg = t_avgt.get_value() / Nbind.get_value();
+    double k = B / (tavg * 1e-12);
 
-  model->lout << "   (session " << id << ") ";
-  model->lout << "k_direct = " << k << " s⁻¹ ";
-  model->lout << "Nbind=" << Nbind.get_value() << " ";
-  model->lout << "Ndone=" << Ndone << " ";
-  model->lout << "t_avg=" << tavg << " ";
-  model->lout << "β=" << B << " ";
-  model->lout << "q=" << q << " ";
-  model->lout << "Davg=" << Davg << " ";
-  model->lout << endl;
+    model->lout << "   (session " << id << ") ";
+    model->lout << "k_direct = " << k << " s⁻¹ ";
+    model->lout << "Nbind=" << Nbind.get_value() << " ";
+    model->lout << "Ndone=" << Ndone << " ";
+    model->lout << "t_avg=" << tavg << " ";
+    model->lout << "β=" << B << " ";
+    model->lout << "q=" << q << " ";
+    model->lout << "Davg=" << Davg << " ";
+    model->lout << endl;
+  }
 
   if(model->max_simulations > 0 and Ndone >= model->max_simulations) {
     cout << "> Maximum simulations reached. Exiting." << endl;

@@ -11,7 +11,7 @@ void Model::integrate() {
 
   cilk_for(int il=0; il < ligands.size(); il++) {
     Body *Bi = ligands[il];
-
+    if(! Bi->done) {
       bool onGrid = false, associated = false;
       double E;
 
@@ -143,7 +143,6 @@ void Model::integrate() {
       dR.x = (A * Si->x) + (B * Bi->F.x);
       dR.y = (A * Si->y) + (B * Bi->F.y);
       dR.z = (A * Si->z) + (B * Bi->F.z);
-      if(vertex_magnitude(dR) > 1.) cout << "CAUTION: Translational step greater than 1A (|dR| = " << vertex_magnitude(dR) << " A) dt = " << Bi->dt << endl;
       Bi->translate(dR.x, dR.y, dR.z);
 
       double C = sqrt(2 * Bi->Da * Bi->dt);
@@ -220,6 +219,7 @@ void Model::integrate() {
         }
       }
 
+    }
   }
 
   if(step % 10000 == 0)

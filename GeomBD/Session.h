@@ -24,15 +24,19 @@ class Session {
     vector< Body* > conformations;
     vector< Body* > ligands;
     vector< BindingCriteria* > bindingCriteria;
+    deque<double> beta_history;
+    bool done;
 
   public:
     Session(Model *m, SimulationConfig s);
     ~Session();
 
     virtual void populateLigands();
-    virtual void positionLigand(Body *body);
-    virtual void printRateConstant();
+    virtual void positionLigand(Body *body) { };
+    virtual void printRateConstant() { };
     virtual void checkLigand(Body *body) { };
+    virtual void recordBeta(double beta);
+    virtual void checkConvergence();
     virtual void finalize() { };
 
 };

@@ -35,9 +35,10 @@ class Body {
   public:
     double t;
     double dt;
+    double t_dwell, t_dwell_max, t_dwell_total;
 
   public:
-    double t_dwell, t_dwell_max, t_dwell_total;
+    bool done;
 
   public:
     Body();

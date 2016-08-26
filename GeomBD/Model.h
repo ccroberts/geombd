@@ -17,9 +17,10 @@ class Model {
   friend class Receptor;
 
   public:
-    // {con|de}structors
+    // constructors
     Model();
     Model(string inputfn, string outputfn, string logfn);
+    // destructor
     ~Model();
 
   public:
@@ -30,12 +31,12 @@ class Model {
     void parseLigandPQR(string lfn);
 
     // trajectory output
-    string ofn;
+    string ofn;   //trajectory filename
     void writeCoordinatesPQR();
 
     // log output
-    string lfn;
-    fstream lout;
+    string lfn;   //log filename
+    fstream lout; //log file stream for writing
     void printRateConstant();
 
   private:
@@ -47,43 +48,45 @@ class Model {
 
   public:
     // simulation parameters
-    int threads;
-    int k_trj;
-    int k_log;
-    double T;
-    double viscosity;
-    double convergence;
-    int max_simulations;
-    int fd_order;
+    double T;                 //temperature of system
+    double viscosity;         //viscosity of solvent
+    int threads;              //number of threads to parallelize operations
+    int fd_order;             //order of finite difference approximation (default = 2)
+    int rate_trj;             //frquency of trajectory writes (steps)
+    int rate_log;             //frequency of log writes (steps)
+    int rate_conv;            //frequency of convergence test (steps)
+    double convergence;       //terminate run once a beta/k value has converged by a certain order of magnitude (default = 1e-4)
+    int max_simulations;      //terminate run after a certain number of total simulations have been completed (default = none)
+    void checkConvergence();
 
   public:
-    vector< Session* > sessions;
-    vector< Body* > ligands;
+    vector< Session* > sessions;    //BD sessions
+    vector< Body* > ligands;        //all ligands across all sessions
     void populateLigands();
 
   public:
     // grids
-    vector< Grid_ES* > esmaps;
-    vector< Grid_D* > dmaps;
-    vector< Grid_Type* > typemaps;
-    vector< Grid_EX* > exmaps;
-    Grid_EX *debug_map;
+    vector< Grid_ES* > esmaps;      //electrostatic maps
+    vector< Grid_D* > dmaps;        //desolvation maps
+    vector< Grid_Type* > typemaps;  //atom typed maps (currently just LJ has been implemented)
+    vector< Grid_EX* > exmaps;      //exclusion maps
+    Grid_EX *debug_map;             //debug maps for recording force magnitudes
 
   public:
     // system/receptor definitions
-    vertex center;
-    double system_r;
-    double receptor_radius;
-    vertex bounds_min, bounds_max;
+    vertex center;                  //center of receptor
+    double system_extent;           //receptor maximum extension from center
+    double receptor_radius;         //receptor radius of gyration
+    vertex bounds_min, bounds_max;  //bounding coordinates
 
   public:
     // time stepping
-    int step;
-    bool done;
-    double dt_fine, dt_coarse;
-    double dt_scale_start, dt_scale_end;
-    void run();
-    void integrate();
+    int step;                            //current step of the simulation progression
+    bool done;                           //boolean to kill simulation when a termination condition is met
+    double dt_fine, dt_coarse;           //timestep scaling values(min->max = fine->coarse)
+    double dt_scale_start, dt_scale_end; //timestep scaning distance
+    void run();                          //main loop
+    void integrate();                    //time step function
 
 };
 

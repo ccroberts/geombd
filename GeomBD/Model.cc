@@ -6,27 +6,33 @@
 
 
 Model::Model() {
-  viscosity = 1.0/*cP*/ * 0.001/*cP->Pa.s->J.s/m^3*/ * 2.39e-4 /*J->kcal*/ * 1e12 /*s->ps*/ * 1e-30 /*1/m^3->1/A^3*/ * Na /*kcal->kcal/mol*/;
-  T = 298.;
-  receptor_radius = 1e20;
-  k_trj = 10000;
-  k_log = 5000;
-  convergence = 0.;
-  max_simulations = -1;
-  fd_order = 2;
+  rngCPU = NULL;
+  rand = NULL;
 
-  memset(&center, 0, sizeof(vertex));
-  memset(&bounds_min, 0, sizeof(vertex));
-  memset(&bounds_max, 0, sizeof(vertex));
+  T = 298.;
+  viscosity = 1.0/*cP*/ * 0.001/*cP->Pa.s->J.s/m^3*/ * 2.39e-4 /*J->kcal*/ * 1e12 /*s->ps*/ * 1e-30 /*1/m^3->1/A^3*/ * Na /*kcal->kcal/mol*/;
+  threads = 1;
+  fd_order = 2;
+  rate_trj = 10000;
+  rate_log = 5000;
+  rate_conv = 10000;
+  convergence = 1e-4;
+  max_simulations = -1;
+
+  debug_map = NULL;
+
+  center.x = center.y = center.z = 0.;
+  system_extent = 0.;
+  receptor_radius = 1e20;
+  bounds_min.x = bounds_min.y = bounds_min.z = 0.;
+  bounds_max.x = bounds_max.y = bounds_max.z = 0.;
+
   step = 0;
   done = false;
   dt_fine = 0.010;
-  dt_coarse = 10.000;
+  dt_coarse = 1.000;
   dt_scale_start = 100.;
   dt_scale_end = 500.;
-
-  //debug
-  debug_map = NULL;
 }
 
 
@@ -92,15 +98,18 @@ void Model::run() {
     integrate();
     step++;
 
-    // Write trajectory and statistics every 'k_trj' steps
-    if(step % k_trj == 0) {
+    // Write trajectory and statistics every 'rate_trj' steps
+    if(step % rate_trj == 0) {
       writeCoordinatesPQR();
     }
-    if(step % k_log == 0) {
+    if(step % rate_log == 0) {
       t.stop();
-      lout << "* Step " << step << " (" << (t.duration/k_trj) << " s/step)" << endl;
+      lout << "* Step " << step << " (" << (t.duration/rate_trj) << " s/step)" << endl;
       printRateConstant();
       t.start();
+    }
+    if(step % rate_conv == 0) {
+      checkConvergence();
     }
   }
 
@@ -121,3 +130,11 @@ void Model::populateLigands() {
     sessions[i]->populateLigands();
   }
 }
+
+void Model::checkConvergence() {
+  for(int i=0; i < sessions.size(); i++) {
+    sessions[i]->checkConvergence();
+  }
+}
+
+

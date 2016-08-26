@@ -72,6 +72,11 @@ void Model::parseInputFile() {
         lout << "* Loading debug map \"" << token << "\"" << endl;
         debug_map = new Grid_EX(token, "x");
       }
+      if(token == "convergence") {
+        parseNextValue(&line, &token);
+        lout << "* Convergence criteria: " << token << endl;
+        convergence = stringToDouble(token);
+      }
       if(token == "threads") {
         parseNextValue(&line, &token);
         __cilkrts_set_param("nworkers", token.c_str());
@@ -84,13 +89,13 @@ void Model::parseInputFile() {
       }
       if(token == "writetraj") {
         parseNextValue(&line, &token);
-        k_trj = stringToInt(token);
-        lout << "* Writing trajectory every " << k_trj << " steps." << endl;
+        rate_trj = stringToInt(token);
+        lout << "* Writing trajectory every " << rate_trj << " steps." << endl;
       }
       if(token == "writelog") {
         parseNextValue(&line, &token);
-        k_log = stringToInt(token);
-        lout << "* Writing association rate information to logfile every " << k_log << " steps." << endl;
+        rate_log = stringToInt(token);
+        lout << "* Writing association rate information to logfile every " << rate_log << " steps." << endl;
       }
       if(token == "timestep") {
         parseNextValue(&line, &token);
@@ -321,8 +326,8 @@ void Model::parseInputFile() {
   dr[2] = bounds_max.z - center.z;
   rmax = sqrt(dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
 
-  system_r = max(rmin, rmax);
-  lout << "* System extends to a maximum distance of " << system_r << "A" << endl;
+  system_extent = max(rmin, rmax);
+  lout << "* System extends to a maximum distance of " << system_extent << "A" << endl;
 }
 
 
