@@ -77,6 +77,11 @@ void Model::parseInputFile() {
         lout << "* Convergence criteria: " << token << endl;
         convergence = stringToDouble(token);
       }
+      if(token == "calcconv") {
+        parseNextValue(&line, &token);
+        rate_conv = stringToInt(token);
+        lout << "* Checking convergence every " << rate_conv<< " steps." << endl;
+      }
       if(token == "threads") {
         parseNextValue(&line, &token);
         __cilkrts_set_param("nworkers", token.c_str());
