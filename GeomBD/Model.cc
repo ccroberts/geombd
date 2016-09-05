@@ -6,6 +6,8 @@
 
 
 Model::Model() {
+  writeBinders = false;
+
   rngCPU = NULL;
   rand = NULL;
 

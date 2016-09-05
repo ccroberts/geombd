@@ -102,6 +102,11 @@ void Model::parseInputFile() {
         rate_trj = stringToInt(token);
         lout << "* Writing trajectory every " << rate_trj << " steps." << endl;
       }
+      if(token == "writebinders") {
+        parseNextValue(&line, &bfn);
+        lout << "* Writing bound conformations to file " << bfn << endl;
+        writeBinders = true;
+      }
       if(token == "betacalc") {
         parseNextValue(&line, &token);
         rate_beta = stringToInt(token);

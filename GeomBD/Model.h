@@ -34,6 +34,10 @@ class Model {
     string ofn;   //trajectory filename
     void writeCoordinatesPQR();
 
+    // bound conformation output
+    bool writeBinders;
+    string bfn;   //bound pqr filename
+
     // log output
     string lfn;   //log filename
     fstream lout; //log file stream for writing

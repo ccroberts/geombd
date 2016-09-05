@@ -216,6 +216,12 @@ void Model::integrate() {
           Bi->t_dwell = 0.;
           Bi->t_dwell_max = 0.;
           Bi->t_dwell_total = 0.;
+          // Should we write the bound conformation?
+          if(writeBinders) {
+            fstream boutf(bfn.c_str(), ios::out | ios::app);
+            Bi->writePDB(boutf, 'A');
+            boutf.close();
+          }
         }
       }
 
