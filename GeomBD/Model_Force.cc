@@ -210,18 +210,20 @@ void Model::integrate() {
           *Bi->session->t_avgt += Bi->t;
           *bc->Nbind += 1;
           *bc->t_avgt += Bi->t;
-          Bi->session->positionLigand(Bi);
           lout << "#" << Bi->session->id << "\t Binding event at t=" << Bi->t << " ps  (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
-          Bi->t = 0.;
-          Bi->t_dwell = 0.;
-          Bi->t_dwell_max = 0.;
-          Bi->t_dwell_total = 0.;
           // Should we write the bound conformation?
           if(writeBinders) {
             fstream boutf(bfn.c_str(), ios::out | ios::app);
             Bi->writePDB(boutf, 'A');
+            boutf << "TER" << endl;
             boutf.close();
           }
+          // Reposition ligand
+          Bi->session->positionLigand(Bi);
+          Bi->t = 0.;
+          Bi->t_dwell = 0.;
+          Bi->t_dwell_max = 0.;
+          Bi->t_dwell_total = 0.;
         }
       }
 
