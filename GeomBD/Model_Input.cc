@@ -77,7 +77,12 @@ void Model::parseInputFile() {
         lout << "* Convergence criteria: " << token << endl;
         convergence = stringToDouble(token);
       }
-      if(token == "calcconv") {
+      if(token == "convwindow") {
+        parseNextValue(&line, &token);
+        lout << "* Convergence window: " << token << endl;
+        convergence_window = stringToInt(token);
+      }
+      if(token == "convcalc") {
         parseNextValue(&line, &token);
         rate_conv = stringToInt(token);
         lout << "* Checking convergence every " << rate_conv<< " steps." << endl;

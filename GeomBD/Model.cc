@@ -17,6 +17,7 @@ Model::Model() {
   rate_log = 5000;
   rate_conv = 10000;
   convergence = 1e-4;
+  convergence_window = 100;
   max_simulations = -1;
 
   debug_map = NULL;

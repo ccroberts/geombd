@@ -59,7 +59,7 @@ void Session::recordBeta(double beta) {
 
 
 void Session::checkConvergence() {
-  if(beta_history.size() < 100.) return;
+  if(beta_history.size() < model->convergence_window) return;
 
   double m = 0., s = 0.;
   for(int i=0; i < beta_history.size(); i++) {
