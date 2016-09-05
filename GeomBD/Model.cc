@@ -14,7 +14,7 @@ Model::Model() {
   threads = 1;
   fd_order = 2;
   rate_trj = 10000;
-  rate_log = 5000;
+  rate_beta = 5000;
   rate_conv = 10000;
   convergence = 1e-4;
   convergence_window = 100;
@@ -105,7 +105,7 @@ void Model::run() {
     if(step % rate_trj == 0) {
       writeCoordinatesPQR();
     }
-    if(step % rate_log == 0) {
+    if(step % rate_beta == 0) {
       t.stop();
       lout << "* Step " << step << " (" << (t.duration/rate_trj) << " s/step)" << endl;
       printRateConstant();

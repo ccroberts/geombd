@@ -102,10 +102,10 @@ void Model::parseInputFile() {
         rate_trj = stringToInt(token);
         lout << "* Writing trajectory every " << rate_trj << " steps." << endl;
       }
-      if(token == "writelog") {
+      if(token == "betacalc") {
         parseNextValue(&line, &token);
-        rate_log = stringToInt(token);
-        lout << "* Writing association rate information to logfile every " << rate_log << " steps." << endl;
+        rate_beta = stringToInt(token);
+        lout << "* Calculating Beta value, and writing association rate information to logfile, every " << rate_beta << " steps." << endl;
       }
       if(token == "timestep") {
         parseNextValue(&line, &token);
