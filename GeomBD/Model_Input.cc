@@ -9,6 +9,7 @@
 #include "Timer.h"
 #include "Session.h"
 #include "BindingCriteria.h"
+#include "AtomicMass.h"
 
 
 
@@ -447,6 +448,7 @@ void Model::parseLigandPQR(string lfn) {
       bj->r = stringToDouble(line.substr(69, 6));
 
       //TODO: Complete table
+      /*
       if(at == "C") bj->m = 12.;
       if(at == "N") bj->m = 14.;
       if(at == "O") bj->m = 16.;
@@ -454,6 +456,8 @@ void Model::parseLigandPQR(string lfn) {
       if(at == "S") bj->m = 32.;
       if(at == "Na") bj->m = 22.9898;
       if(at == "Cl") bj->m = 35.45;
+      */
+      bj->m = atomicMass(at);
 
       if(bj->m == 0.) {
         lout << "! FATAL: No mass for ligand bead type: " << at << endl;

@@ -32,7 +32,13 @@ class Model {
 
     // trajectory output
     string ofn;   //trajectory filename
+    fstream ofd;  //trajectory file handle
+    int Natoms;   //neccesary storage
+    int Nframes;  //neccesary storage
     void writeCoordinatesPQR();
+    void openTrajectoryDCD();
+    void writeCoordinatesDCD();
+    void closeTrajectoryDCD();
 
     // bound conformation output
     bool writeBinders;

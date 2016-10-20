@@ -175,6 +175,9 @@ class Molecule_PQRE {
         }
       }
 
+      center.x /= charges.size();
+      center.y /= charges.size();
+      center.z /= charges.size();
     }
 
     void print_types() {

@@ -36,6 +36,9 @@ Model::Model() {
   dt_coarse = 1.000;
   dt_scale_start = 100.;
   dt_scale_end = 500.;
+
+  Natoms = 0;
+  Nframes = 0;
 }
 
 
@@ -94,8 +97,9 @@ void Model::generateNormal() {
 void Model::run() {
   Timer t;
 
+  openTrajectoryDCD();
+
   t.start();
-  if(step == 0) writeCoordinatesPQR();
 
   while(!done) {
     integrate();
@@ -105,7 +109,7 @@ void Model::run() {
       checkConvergence();
     }
     if(step % rate_trj == 0) {
-      writeCoordinatesPQR();
+      writeCoordinatesDCD();
     }
     if(step % rate_beta == 0) {
       t.stop();
@@ -117,6 +121,7 @@ void Model::run() {
 
   // Final information
   printRateConstant();
+  closeTrajectoryDCD();
 }
 
 
