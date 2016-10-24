@@ -218,6 +218,8 @@ void Model::integrate() {
             boutf << "TER" << endl;
             boutf.close();
           }
+          // Record Beta value after binding event
+          Bi->session->recordBeta();
           // Reposition ligand
           Bi->session->positionLigand(Bi);
           Bi->t = 0.;

@@ -50,9 +50,12 @@ void Session::populateLigands() {
 }
 
 
-void Session::recordBeta(double beta) {
+void Session::recordBeta() {
+  int _Nbind = Nbind.get_value();
+  int _Ndone = Nexit.get_value() + Ntlim.get_value();
+  int beta = _Nbind / (_Nbind + _Ndone);
   beta_history.push_back(beta);
-  while(beta_history.size() > 100.) {
+  while(beta_history.size() > model->convergence_window) {
     beta_history.pop_front();
   }
 }
@@ -73,6 +76,7 @@ void Session::checkConvergence() {
   }
   s = sqrt(s / beta_history.size());
   if(s / m <= model->convergence) {
+    model->lout << "* Convergence criteria reached. Exiting successfully." << endl;
     done = true;
     for(int i=0; i < ligands.size(); i++) ligands[i]->done = true;
   }
@@ -135,7 +139,6 @@ void SessionRadial::printRateConstant() {
   }
 
   double B = ((double)Nbind.get_value()) / ((double)Ndone);
-  recordBeta(B);
   if(bindingCriteria.size() > 1) {
     double kb = 4. * M_PI * b * Davg;
     double k = (kb * B) / (1 - ((1 - B)*b/q));
@@ -166,8 +169,10 @@ void SessionRadial::checkLigand(Body *bi) {
   dr[2] = bi->R.z - model->center.z;
   l2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
   if(l2 >= q2) {
-    //bi->done = true;
     *Nexit += 1;
+    // Record Beta value after exit event
+    bi->session->recordBeta();
+    // Reposition ligand
     bi->session->positionLigand(bi);
     model->lout << "#" << id << "\t Escape event at t=" << bi->t << " ps  (t_dwell=" << bi->t_dwell << "ps, max=" << bi->t_dwell_max << "ps, total=" << bi->t_dwell_total << "ps)" << endl;
     bi->t = 0.;
@@ -210,7 +215,6 @@ void SessionAbsolutePeriodic::printRateConstant() {
   }
 
   double B = ((double)Nbind.get_value()) / ((double)Ndone);
-  recordBeta(B);
   if(bindingCriteria.size() > 1) {
     double V = bounds.x * bounds.y * bounds.z * LperA3;
     double C = (1. / Na) / V;
@@ -240,6 +244,9 @@ void SessionAbsolutePeriodic::checkLigand(Body *bi) {
   if(bi->t >= t_max) {
     //bi->done = true;
     *Ntlim += 1;
+    // Record Beta value after exit event
+    bi->session->recordBeta();
+    // Reposition ligand
     positionLigand(bi);
     model->lout << "#" << id << "\t Time-out event  (t_dwell=" << bi->t_dwell << "ps, max=" << bi->t_dwell_max << "ps, total=" << bi->t_dwell_total << "ps)" << endl;
     bi->t = 0.;
@@ -285,7 +292,6 @@ void SessionAbsoluteRadial::printRateConstant() {
   }
 
   double B = ((double)Nbind.get_value()) / ((double)Ndone);
-  recordBeta(B);
   if(bindingCriteria.size() > 1) {
     double tavg = t_avgt.get_value() / Nbind.get_value();
     double k = B / (tavg * 1e-12);
@@ -318,6 +324,9 @@ void SessionAbsoluteRadial::checkLigand(Body *bi) {
   if(l2 >= q2) {
     //bi->done = true;
     *Nexit += 1;
+    // Record Beta value after exit event
+    bi->session->recordBeta();
+    // Reposition ligand
     bi->session->positionLigand(bi);
     model->lout << "#" << id << "\t Escape event at t=" << bi->t << " ps  l=" << sqrt(l2) << " (t_dwell=" << bi->t_dwell << "ps, max=" << bi->t_dwell_max << "ps, total=" << bi->t_dwell_total << "ps)" << endl;
     bi->t = 0.;
