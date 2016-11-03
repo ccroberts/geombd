@@ -30,6 +30,10 @@ Body::Body() {
   t_dwell_max = 0.;
   t_dwell_total = 0.;
 
+  bound = false;
+  exited = false;
+  timedout = false;
+
   r = 0.;
   r_max = 0.;
 

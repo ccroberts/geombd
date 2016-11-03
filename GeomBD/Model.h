@@ -64,7 +64,6 @@ class Model {
     int fd_order;             //order of finite difference approximation (default = 2)
     int rate_trj;             //frquency of trajectory writes (steps)
     int rate_beta;            //frequency of beta calculations, and thuslog writes (units are number of steps)
-    int rate_conv;            //frequency of convergence test (steps)
     double convergence;       //terminate run once a beta/k value has converged by a certain order of magnitude (default = 1e-4)
     int convergence_window;   //number of recorded beta values required to check for convergence (default = 100)
     int max_simulations;      //terminate run after a certain number of total simulations have been completed (default = none)

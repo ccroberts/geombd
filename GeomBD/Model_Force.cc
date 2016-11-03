@@ -206,11 +206,6 @@ void Model::integrate() {
       for(int bs=0; bs < Bi->session->bindingCriteria.size(); bs++) {
         BindingCriteria* bc = Bi->session->bindingCriteria[bs];
         if(bc->checkBinding(Bi)) {
-          *Bi->session->Nbind += 1;
-          *Bi->session->t_avgt += Bi->t;
-          *bc->Nbind += 1;
-          *bc->t_avgt += Bi->t;
-          lout << "#" << Bi->session->id << "\t Binding event at t=" << Bi->t << " ps  (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
           // Should we write the bound conformation?
           if(writeBinders) {
             fstream boutf(bfn.c_str(), ios::out | ios::app);
@@ -218,9 +213,11 @@ void Model::integrate() {
             boutf << "TER" << endl;
             boutf.close();
           }
-          // Record Beta value after binding event
-          Bi->session->recordBeta();
-          // Reposition ligand
+          lout << "#" << Bi->session->id << "\t Binding event at t=" << Bi->t << " ps  (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
+          Bi->bound = true;
+          *Bi->session->t_avgt += Bi->t;
+          *bc->Nbind += 1;
+          *bc->t_avgt += Bi->t;
           Bi->session->positionLigand(Bi);
           Bi->t = 0.;
           Bi->t_dwell = 0.;
@@ -232,12 +229,26 @@ void Model::integrate() {
     }
   }
 
-  if(step % 10000 == 0)
-    for(int il=0; il < ligands.size(); il++) {
-      if(fabs(ligands[il]->mF) > 0.1)
-        cout << "F " << il << "\t" << ligands[il]->mF << endl;
-    }
   cilk_sync;
+
+  for(int il=0; il < ligands.size(); il++) {
+    Body *Bi = ligands[il];
+    if(Bi->bound == true) {
+      *Bi->session->Nbind += 1;
+      Bi->session->recordBeta();
+      Bi->bound = false;
+    }
+    if(Bi->exited == true) {
+      *Bi->session->Nexit += 1;
+      Bi->session->recordBeta();
+      Bi->exited = false;
+    }
+    if(Bi->timedout == true) {
+      *Bi->session->Nexit += 1;
+      Bi->session->recordBeta();
+      Bi->timedout = false;
+    }
+  }
 }
 
 

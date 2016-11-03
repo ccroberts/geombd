@@ -36,7 +36,7 @@ class Session {
     virtual void printRateConstant() { };
     virtual void checkLigand(Body *body) { };
     virtual void recordBeta();
-    virtual void checkConvergence();
+    virtual double checkConvergence();
     virtual void finalize() { };
 
 };

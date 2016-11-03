@@ -83,11 +83,6 @@ void Model::parseInputFile() {
         lout << "* Convergence window: " << token << endl;
         convergence_window = stringToInt(token);
       }
-      if(token == "convcalc") {
-        parseNextValue(&line, &token);
-        rate_conv = stringToInt(token);
-        lout << "* Checking convergence every " << rate_conv<< " steps." << endl;
-      }
       if(token == "threads") {
         parseNextValue(&line, &token);
         __cilkrts_set_param("nworkers", token.c_str());

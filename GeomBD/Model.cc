@@ -17,7 +17,6 @@ Model::Model() {
   fd_order = 2;
   rate_trj = 10000;
   rate_beta = 5000;
-  rate_conv = 5000;
   convergence = 1e-4;
   convergence_window = 100;
   max_simulations = -1;
@@ -105,9 +104,6 @@ void Model::run() {
     integrate();
     step++;
 
-    if(step % rate_conv == 0) {
-      checkConvergence();
-    }
     if(step % rate_trj == 0) {
       writeCoordinatesDCD();
     }

@@ -38,7 +38,10 @@ class Body {
     double t_dwell, t_dwell_max, t_dwell_total;
 
   public:
-    bool done;
+    bool done; // specific condition for when a session has completed
+    bool bound;
+    bool exited;
+    bool timedout;
 
   public:
     Body();

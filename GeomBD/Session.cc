@@ -51,9 +51,9 @@ void Session::populateLigands() {
 
 
 void Session::recordBeta() {
-  int _Nbind = Nbind.get_value();
-  int _Ndone = Nexit.get_value() + Ntlim.get_value();
-  int beta = _Nbind / (_Nbind + _Ndone);
+  double _Nbind = (double)Nbind.get_value();
+  double _Ndone = (double)Nexit.get_value() + (double)Ntlim.get_value();
+  double beta = _Nbind / (_Nbind + _Ndone);
   beta_history.push_back(beta);
   while(beta_history.size() > model->convergence_window) {
     beta_history.pop_front();
@@ -61,25 +61,28 @@ void Session::recordBeta() {
 }
 
 
-void Session::checkConvergence() {
-  if(beta_history.size() < model->convergence_window) return;
+double Session::checkConvergence() {
+  if(beta_history.size() < model->convergence_window) return -1;
 
   double m = 0., s = 0.;
   for(int i=0; i < beta_history.size(); i++) {
     m += beta_history[i];
   }
   m /= beta_history.size();
-  if(m == 0) return;
+  if(m == 0) return -1;
 
   for(int i=0; i < beta_history.size(); i++) {
     s += pow(beta_history[i]-m, 2);
   }
   s = sqrt(s / beta_history.size());
-  if(s / m <= model->convergence) {
+  double soverm = s / m;
+  if(soverm <= model->convergence) {
     model->lout << "* Convergence criteria reached. Exiting successfully." << endl;
     done = true;
     for(int i=0; i < ligands.size(); i++) ligands[i]->done = true;
   }
+
+  return soverm;
 }
 
 
@@ -109,12 +112,13 @@ void SessionRadial::positionLigand(Body *bi) {
 
 void SessionRadial::printRateConstant() {
   int Ndone = Nbind.get_value() + Nexit.get_value();
+  double conv = checkConvergence();
 
   if(Ndone == 0) {
     double kb = 4. * M_PI * b * Davg   *Na*1e12*1e-27;
     model->lout << "   (session " << id << ") ";
-    model->lout << "b=" << b << " ";
     model->lout << "kd(b)=" << kb << " ";
+    model->lout << "b=" << b << " ";
     model->lout << "q=" << q << " ";
     model->lout << "Davg=" << Davg << " ";
     model->lout << endl;
@@ -131,8 +135,9 @@ void SessionRadial::printRateConstant() {
     model->lout << "Nbind=" << bindingCriteria[bsi]->Nbind.get_value() << " ";
     model->lout << "Ndone=" << Ndone << " ";
     model->lout << "β=" << B << " ";
-    model->lout << "b=" << b << " ";
+    model->lout << "conv=" << conv << " ";
     model->lout << "kd(b)=" << kb * Na * 1e12 * 1e-27 << " ";
+    model->lout << "b=" << b << " ";
     model->lout << "q=" << q << " ";
     model->lout << "Davg=" << Davg << " ";
     model->lout << endl;
@@ -148,15 +153,15 @@ void SessionRadial::printRateConstant() {
     model->lout << "Nbind=" << Nbind.get_value() << " ";
     model->lout << "Ndone=" << Ndone << " ";
     model->lout << "β=" << B << " ";
-    model->lout << "b=" << b << " ";
     model->lout << "kd(b)=" << kb * Na * 1e12 * 1e-27 << " ";
+    model->lout << "b=" << b << " ";
     model->lout << "q=" << q << " ";
     model->lout << "Davg=" << Davg << " ";
     model->lout << endl;
   }
 
   if(model->max_simulations > 0 and Ndone >= model->max_simulations) {
-    cout << "> Maximum simulations reached. Exiting." << endl;
+    model->lout << "> Maximum simulations reached. Exiting." << endl;
     model->done = true;
   }
 }
@@ -169,12 +174,13 @@ void SessionRadial::checkLigand(Body *bi) {
   dr[2] = bi->R.z - model->center.z;
   l2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
   if(l2 >= q2) {
-    *Nexit += 1;
+    //*Nexit += 1;
     // Record Beta value after exit event
-    bi->session->recordBeta();
-    // Reposition ligand
-    bi->session->positionLigand(bi);
+    //bi->session->recordBeta();
+    //bi->session->record_beta->set_value(true);
     model->lout << "#" << id << "\t Escape event at t=" << bi->t << " ps  (t_dwell=" << bi->t_dwell << "ps, max=" << bi->t_dwell_max << "ps, total=" << bi->t_dwell_total << "ps)" << endl;
+    bi->exited = true;
+    bi->session->positionLigand(bi);
     bi->t = 0.;
     bi->t_dwell = 0.;
     bi->t_dwell_max = 0.;
@@ -210,7 +216,7 @@ void SessionAbsolutePeriodic::printRateConstant() {
     double tavg = bindingCriteria[bsi]->t_avgt.get_value() / bindingCriteria[bsi]->Nbind.get_value();
     double rate = B * C / (tavg * 1e-12);
 
-    printf("   (session %d bs %d)   rate = %.5e Ms⁻¹ (Nbind=%d Ndone=%d β=%.4f C=%.1f k=%.5e s⁻¹ tavg=%.5e Davg=%.5e)", id, bsi, rate, bindingCriteria[bsi]->Nbind.get_value(), Ndone, B, C, B / (tavg * 1e-12), tavg, Davg);
+    //printf("   (session %d bs %d)   rate = %.5e Ms⁻¹ (Nbind=%d Ndone=%d β=%.4f C=%.1f k=%.5e s⁻¹ tavg=%.5e Davg=%.5e)", id, bsi, rate, bindingCriteria[bsi]->Nbind.get_value(), Ndone, B, C, B / (tavg * 1e-12), tavg, Davg);
     model->lout << endl;
   }
 
@@ -222,12 +228,12 @@ void SessionAbsolutePeriodic::printRateConstant() {
 
     double rate = B * C / (tavg * 1e-12);
 
-    printf("   (session %d)   rate = %.5e Ms⁻¹ (Nbind=%d Ndone=%d β=%.4f C=%.1f k=%.5e s⁻¹ tavg=%.5e Davg=%.5e)", id, rate, Nbind.get_value(), Ndone, B, C, B / (tavg * 1e-12), tavg, Davg);
+    //printf("   (session %d)   rate = %.5e Ms⁻¹ (Nbind=%d Ndone=%d β=%.4f C=%.1f k=%.5e s⁻¹ tavg=%.5e Davg=%.5e)", id, rate, Nbind.get_value(), Ndone, B, C, B / (tavg * 1e-12), tavg, Davg);
     model->lout << endl;
   }
 
   if(model->max_simulations > 0 and Ndone >= model->max_simulations) {
-    cout << "> Maximum simulations reached. Exiting." << endl;
+    model->lout << "> Maximum simulations reached. Exiting." << endl;
     model->done = true;
   }
 }
@@ -243,12 +249,13 @@ void SessionAbsolutePeriodic::checkLigand(Body *bi) {
 
   if(bi->t >= t_max) {
     //bi->done = true;
-    *Ntlim += 1;
+    //*Ntlim += 1;
     // Record Beta value after exit event
-    bi->session->recordBeta();
+    //bi->session->recordBeta();
     // Reposition ligand
-    positionLigand(bi);
     model->lout << "#" << id << "\t Time-out event  (t_dwell=" << bi->t_dwell << "ps, max=" << bi->t_dwell_max << "ps, total=" << bi->t_dwell_total << "ps)" << endl;
+    positionLigand(bi);
+    bi->timedout = true;
     bi->t = 0.;
     bi->t_dwell = 0.;
     bi->t_dwell_max = 0.;
@@ -274,6 +281,7 @@ void SessionAbsoluteRadial::positionLigand(Body *bi) {
 void SessionAbsoluteRadial::printRateConstant() {
   int Ndone = Nbind.get_value() + Nexit.get_value();
   if(Ndone == 0) return;
+  double conv = checkConvergence();
 
   for(int bsi=0; bsi < bindingCriteria.size(); bsi++) {
     double B = ((double)bindingCriteria[bsi]->Nbind.get_value()) / ((double)Ndone);
@@ -302,13 +310,14 @@ void SessionAbsoluteRadial::printRateConstant() {
     model->lout << "Ndone=" << Ndone << " ";
     model->lout << "t_avg=" << tavg << " ";
     model->lout << "β=" << B << " ";
+    model->lout << "conv=" << conv << " ";
     model->lout << "q=" << q << " ";
     model->lout << "Davg=" << Davg << " ";
     model->lout << endl;
   }
 
   if(model->max_simulations > 0 and Ndone >= model->max_simulations) {
-    cout << "> Maximum simulations reached. Exiting." << endl;
+    model->lout << "> Maximum simulations reached. Exiting." << endl;
     model->done = true;
   }
 }
@@ -323,11 +332,12 @@ void SessionAbsoluteRadial::checkLigand(Body *bi) {
 
   if(l2 >= q2) {
     //bi->done = true;
-    *Nexit += 1;
+    //*Nexit += 1;
     // Record Beta value after exit event
-    bi->session->recordBeta();
+    //bi->session->recordBeta();
     // Reposition ligand
     bi->session->positionLigand(bi);
+    bi->exited = true;
     model->lout << "#" << id << "\t Escape event at t=" << bi->t << " ps  l=" << sqrt(l2) << " (t_dwell=" << bi->t_dwell << "ps, max=" << bi->t_dwell_max << "ps, total=" << bi->t_dwell_total << "ps)" << endl;
     bi->t = 0.;
     bi->t_dwell = 0.;
