@@ -266,6 +266,12 @@ void Model::parseInputFile() {
           sr->b = stringToDouble(token);
           lout << " + Starting radius: " << sr->b << " A" << endl;
         }
+        SessionAbsoluteRadial *sar = dynamic_cast< SessionAbsoluteRadial* >(sessions[sessions.size()-1]);
+        if(sar) {
+          sar->q = stringToDouble(token);
+          sar->q2 = sar->q * sar->q;
+          lout << " + Exit radius: " << sar->q << " A" << endl;
+        }
       }
       if(token == "q") {
         parseNextValue(&line, &token);
