@@ -16,13 +16,16 @@ X_gES = ../bin/Gridder-ES
 O_gD = Gridder-D.o 
 X_gD = ../bin/Gridder-D
 		
+O_gridInfo = GridInfo.o
+X_gridInfo = ../bin/GridInfo
+		
 O_gBPM2DX = bpm2dx.o
 X_gBPM2DX = ../bin/bpm2dx
 		
 O_gBXM2DX = bxm2dx.o
 X_gBXM2DX = ../bin/bxm2dx
 
-all : gLJ gEX gES gD gBPM2DX gBXM2DX
+all : gLJ gEX gES gD gBPM2DX gBXM2DX gridInfo
 
 gLJ: $(O_gLJ) $(C_gLJ)
 	$(CC) $(CFLAGS) $(O_gLJ) $(C_gLJ) -o $(X_gLJ) $(LDFLAGS)
@@ -41,6 +44,9 @@ gBPM2DX: $(O_gBPM2DX) $(C_gBPM2DX)
 
 gBXM2DX: $(O_gBXM2DX) $(C_gBXM2DX)
 	$(CC) $(CFLAGS) $(O_gBXM2DX) $(C_gBXM2DX) -o $(X_gBXM2DX) $(LDFLAGS)
+
+gridInfo: $(O_gridInfo) $(C_gridInfo)
+	$(CC) $(CFLAGS) $(O_gridInfo) $(C_gridInfo) -o $(X_gridInfo) $(LDFLAGS)
 
 %.o : %.cc
 	@echo " - Compiling $<..." 
