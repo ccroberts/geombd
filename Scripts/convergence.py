@@ -31,8 +31,8 @@ y = []
 for line in open(sys.argv[1], 'r'):
   sp = line.split()
   if line.startswith('* Defining session'):
-    x.append([ [] ])
-    y.append([ [] ])
+    x.append([])
+    y.append([])
     sid += 1
   if line.startswith(' + Binding criteria'):
     x[sid].append([])
@@ -40,16 +40,9 @@ for line in open(sys.argv[1], 'r'):
   if line.startswith("   (session"):
     if sp[2].startswith('b='):
       pass #continue?
-    elif sp[1][-1] == ')':
-      sid = int(sp[1][:-1]) - 1
-      kon = float(sp[4])
-      bnd = float(sp[6].split('=')[1])
-      num = float(sp[7].split('=')[1])
-      x[sid][0].append(num)
-      y[sid][0].append(kon)
     elif sp[2] == 'bs':
       sid = int(sp[1]) - 1
-      bsid = int(sp[3][:-1]) + 1
+      bsid = int(sp[3][:-1])
       kon = float(sp[6])
       bnd = float(sp[8].split('=')[1])
       num = int(sp[9].split('=')[1])
@@ -74,7 +67,7 @@ def running_stdev(x, y, w):
   return X, Y, M
 
 
-for window in [100, 1000]:
+for window in [100]:
   if b_stotal:
     for ci in range(len(r_stotal) - 1):
       newy = []
