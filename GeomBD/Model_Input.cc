@@ -103,6 +103,12 @@ void Model::parseInputFile() {
         lout << "* Writing bound conformations to file " << bfn << endl;
         writeBinders = true;
       }
+      if(token == "logbinders") {
+        logBinders = true;
+      }
+      if(token == "logexiters") {
+        logExiters = true;
+      }
       if(token == "betacalc") {
         parseNextValue(&line, &token);
         rate_beta = stringToInt(token);
@@ -134,31 +140,51 @@ void Model::parseInputFile() {
           exit(-1);
         }
       }
+      /*
+       * BACKWARDS COMPATABILITY
+       */
       if(token == "associate") {
-        SessionRadial *sr = new SessionRadial(this);
+        SessionNAM *sr = new SessionNAM(this);
         sessions.push_back(sr);
         sr->id = sessions.size();
         lout << "* Defining session: Association" << endl;
       }
       if(token == "transfer") {
-        parseNextValue(&line, &token); //"periodic" or "radial"
-        if(token == "periodic") {
-          SessionAbsolutePeriodic *sap = new SessionAbsolutePeriodic(this);
-          sessions.push_back(sap);
-          sap->id = sessions.size();
-          lout << "* Defining session: fixed-volume interenzyme transfer" << endl;
-        }
+        parseNextValue(&line, &token);
         if(token == "radial") {
-          SessionAbsoluteRadial *sar = new SessionAbsoluteRadial(this);
+          SessionDirect *sar = new SessionDirect(this);
           sessions.push_back(sar);
           sar->id = sessions.size();
           lout << "* Defining session: interenzyme transfer with radial boundary" << endl;
         }
       }
-
+      /*
+       *
+       */
+      if(token == "session") {
+        parseNextValue(&line, &token);
+        if(token == "direct") {
+          SessionDirect *sar = new SessionDirect(this);
+          sessions.push_back(sar);
+          sar->id = sessions.size();
+          lout << "* Defining session: direct interenzyme transfer with radial boundary" << endl;
+        }
+        if(token == "indirect") {
+          SessionNAM *sr = new SessionNAM(this);
+          sessions.push_back(sr);
+          sr->id = sessions.size();
+          lout << "* Defining session: indirect contribution to interenzyme transfer" << endl;
+        }
+        if(token == "nam") {
+          SessionNAM *sr = new SessionNAM(this);
+          sessions.push_back(sr);
+          sr->id = sessions.size();
+          lout << "* Defining session: NAM association" << endl;
+        }
+      }
       if(token == "ligand") {
         parseNextValue(&line, &token); //ligand filename
-        lout<< "* Ligand filename: " << token << endl;
+        lout<< "  + Ligand filename: " << token << endl;
         if(file_exists(token)) {
           parseLigandPQR(token);
         } else {
@@ -167,7 +193,7 @@ void Model::parseInputFile() {
         }
         parseNextValue(&line, &token); //Nreplicates
         sessions[sessions.size()-1]->Nreplicates = stringToInt(token);
-        lout<< "* Ligand replicates: " << token << endl;
+        lout<< "  + Ligand replicates: " << token << endl;
       }
       if(token == "from") {
         parseNextValue(&line, &token);
@@ -176,24 +202,17 @@ void Model::parseInputFile() {
         double _fy = stringToDouble(token);
         parseNextValue(&line, &token);
         double _fz = stringToDouble(token);
-        SessionAbsolutePeriodic *sap = dynamic_cast< SessionAbsolutePeriodic* >(sessions[sessions.size()-1]);
-        SessionAbsoluteRadial *sar = dynamic_cast< SessionAbsoluteRadial* >(sessions[sessions.size()-1]);
-        if(sap) {
-          sap->start.x = _fx;
-          sap->start.y = _fy;
-          sap->start.z = _fz;
-          lout << "* Ligand starting position: " << _fx << ", " << _fy << ", " << _fz << endl;
-        }
+        SessionDirect *sar = dynamic_cast< SessionDirect* >(sessions[sessions.size()-1]);
         if(sar) {
           sar->start.x = _fx;
           sar->start.y = _fy;
           sar->start.z = _fz;
-          lout << "* Ligand starting position: " << _fx << ", " << _fy << ", " << _fz << endl;
+          lout << "  + Ligand starting position: " << _fx << ", " << _fy << ", " << _fz << endl;
         }
       }
       if(token == "bind") {
         BindingCriteria *bc = new BindingCriteria();
-        lout << "* Binding criteria (Single Ligand Atom): " << endl;
+        lout << "  + Binding criteria (Single Ligand Atom): " << endl;
         parseNextValue(&line, &token);
         double bx = stringToDouble(token);
         parseNextValue(&line, &token);
@@ -210,7 +229,7 @@ void Model::parseInputFile() {
       }
       if(token == "bindand") {
         BindingCriteria *bc = new BindingCriteria();
-        lout << "* Binding criteria (AND): " << endl;
+        lout << "  + Binding criteria (AND): " << endl;
         while(parseNextValue(&line, &token)) {
           double bx = stringToDouble(token);
           parseNextValue(&line, &token);
@@ -228,7 +247,7 @@ void Model::parseInputFile() {
       }
       if(token == "bindor") {
         BindingCriteria *bc = new BindingCriteria(false);
-        lout << " + Binding criteria (OR): " << endl;
+        lout << "  + Binding criteria (OR): " << endl;
         while(parseNextValue(&line, &token)) {
           double bx = stringToDouble(token);
           parseNextValue(&line, &token);
@@ -244,62 +263,39 @@ void Model::parseInputFile() {
         }
         sessions[sessions.size()-1]->bindingCriteria.push_back(bc);
       }
-      if(token == "bounds") {
-        parseNextValue(&line, &token);
-        double _bx = stringToDouble(token);
-        parseNextValue(&line, &token);
-        double _by = stringToDouble(token);
-        parseNextValue(&line, &token);
-        double _bz = stringToDouble(token);
-        SessionAbsolutePeriodic *sap = dynamic_cast< SessionAbsolutePeriodic* >(sessions[sessions.size()-1]);
-        if(sap) {
-          sap->bounds.x = _bx;
-          sap->bounds.y = _by;
-          sap->bounds.z = _bz;
-          lout << " + Periodic boundary: " << _bx << ", " << _by << ", " << _bz << endl;
-        }
-      }
       if(token == "b") {
         parseNextValue(&line, &token);
-        SessionRadial *sr = dynamic_cast< SessionRadial* >(sessions[sessions.size()-1]);
+        SessionNAM *sr = dynamic_cast< SessionNAM* >(sessions[sessions.size()-1]);
         if(sr) {
           sr->b = stringToDouble(token);
-          lout << " + Starting radius: " << sr->b << " A" << endl;
+          lout << "  + Starting radius: " << sr->b << " A" << endl;
         }
-        SessionAbsoluteRadial *sar = dynamic_cast< SessionAbsoluteRadial* >(sessions[sessions.size()-1]);
+        SessionDirect *sar = dynamic_cast< SessionDirect* >(sessions[sessions.size()-1]);
         if(sar) {
           sar->q = stringToDouble(token);
           sar->q2 = sar->q * sar->q;
-          lout << " + Exit radius: " << sar->q << " A" << endl;
+          lout << "  + Exit radius: " << sar->q << " A" << endl;
         }
       }
       if(token == "q") {
         parseNextValue(&line, &token);
-        SessionRadial *sr = dynamic_cast< SessionRadial* >(sessions[sessions.size()-1]);
+        SessionNAM *sr = dynamic_cast< SessionNAM* >(sessions[sessions.size()-1]);
         if(sr) {
           sr->q = stringToDouble(token);
           sr->q2 = sr->q * sr->q;
-          lout << " + Exit radius: " << sr->q << " A" << endl;
+          lout << "  + Exit radius: " << sr->q << " A" << endl;
         }
-        SessionAbsoluteRadial *sar = dynamic_cast< SessionAbsoluteRadial* >(sessions[sessions.size()-1]);
+        SessionDirect *sar = dynamic_cast< SessionDirect* >(sessions[sessions.size()-1]);
         if(sar) {
           sar->q = stringToDouble(token);
           sar->q2 = sar->q * sar->q;
-          lout << " + Exit radius: " << sar->q << " A" << endl;
-        }
-      }
-      if(token == "time") {
-        SessionAbsolutePeriodic *sap = dynamic_cast< SessionAbsolutePeriodic* >(sessions[sessions.size()-1]);
-        if(sap) {
-          parseNextValue(&line, &token);
-          sap->t_max = stringToDouble(token);
-          lout << " + Time limit set to " << sap->t_max << " ps" << endl;
+          lout << "  + Exit radius: " << sar->q << " A" << endl;
         }
       }
       if(token == "maxsims") {
         parseNextValue(&line, &token);
         max_simulations = stringToInt(token);
-        lout << " + Setting maximum number of completed replicate simulations to " << max_simulations << "." << endl;
+        lout << "* Setting maximum number of completed replicate simulations to " << max_simulations << "." << endl;
       }
     }
   }
@@ -480,7 +476,7 @@ void Model::parseLigandPQR(string lfn) {
       }
     }
   }
-  lout << " + Loaded " << Nconfs << " ligand conformation" << endl;
+  lout << "    - Loaded " << Nconfs << " ligand conformation" << endl;
 }
 
 

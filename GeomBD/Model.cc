@@ -8,6 +8,9 @@
 Model::Model() {
   writeBinders = false;
 
+  logBinders = false;
+  logExiters = false;
+
   rngCPU = NULL;
   rand = NULL;
 
@@ -94,11 +97,12 @@ void Model::generateNormal() {
 
 
 void Model::run() {
-  Timer t;
+  Timer rate_timer, wall_timer;
 
   openTrajectoryDCD();
 
-  t.start();
+  rate_timer.start();
+  wall_timer.start();
 
   while(!done) {
     integrate();
@@ -108,10 +112,19 @@ void Model::run() {
       writeCoordinatesDCD();
     }
     if(step % rate_beta == 0) {
-      t.stop();
-      lout << "* Step " << step << " (" << (t.duration/rate_trj) << " s/step)" << endl;
+      rate_timer.stop();
+      lout << "* Step: " << step << " Walltime: ";
+      wall_timer.log_current(&lout);
+      lout << " StepRate: " << (rate_timer.duration/rate_beta) << " s/step" << endl;
       printRateConstant();
-      t.start();
+      // check to see if all sessions are done
+      bool _done = true;
+      for(int i=0; i < sessions.size(); i++) {
+        if(! sessions[i]->done) { _done = false; break; }
+      }
+      done = _done;
+      // start timer
+      rate_timer.start();
     }
   }
 
@@ -132,18 +145,6 @@ void Model::populateLigands() {
   for(int i=0; i < sessions.size(); i++) {
     sessions[i]->populateLigands();
   }
-}
-
-void Model::checkConvergence() {
-  for(int i=0; i < sessions.size(); i++) {
-    sessions[i]->checkConvergence();
-  }
-  // check to see if all sessions are done
-  bool _done = true;
-  for(int i=0; i < sessions.size(); i++) {
-    if(! sessions[i]->done) { _done = false; break; }
-  }
-  done = _done;
 }
 
 

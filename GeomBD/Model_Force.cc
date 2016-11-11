@@ -213,7 +213,8 @@ void Model::integrate() {
             boutf << "TER" << endl;
             boutf.close();
           }
-          lout << "#" << Bi->session->id << "\t Binding event at t=" << Bi->t << " ps  (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
+          if(logBinders)
+            lout << "#" << Bi->session->id << "\t Binding event at t=" << Bi->t << " ps  (t_dwell=" << Bi->t_dwell << "ps, max=" << Bi->t_dwell_max << "ps, total=" << Bi->t_dwell_total << "ps)" << endl;
           Bi->bound = true;
           *Bi->session->t_avgt += Bi->t;
           *bc->Nbind += 1;

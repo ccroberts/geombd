@@ -42,14 +42,14 @@ class Session {
 };
 
 
-class SessionRadial : public Session {
+class SessionNAM : public Session {
   friend class Model;
   protected:
     double b;
     double q, q2;
 
   public:
-    SessionRadial(Model *m);
+    SessionNAM(Model *m);
 
     virtual void positionLigand(Body *body);
     virtual void printRateConstant();
@@ -58,25 +58,7 @@ class SessionRadial : public Session {
 };
 
 
-class SessionAbsolutePeriodic : public Session {
-  friend class Model;
-  protected:
-    vertex start;
-    vertex bounds;
-    double b;
-    double t_max;
-
-  public:
-    SessionAbsolutePeriodic(Model *m);
-
-    virtual void positionLigand(Body *body);
-    virtual void printRateConstant();
-    virtual void checkLigand(Body *body);
-
-};
-
-
-class SessionAbsoluteRadial : public Session {
+class SessionDirect : public Session {
   friend class Model;
   protected:
     vertex start;
@@ -84,7 +66,7 @@ class SessionAbsoluteRadial : public Session {
     double q, q2;
 
   public:
-    SessionAbsoluteRadial(Model *m);
+    SessionDirect(Model *m);
 
     virtual void positionLigand(Body *body);
     virtual void printRateConstant();

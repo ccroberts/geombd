@@ -76,7 +76,7 @@ double Session::checkConvergence() {
   }
   s = sqrt(s / beta_history.size());
   double soverm = s / m;
-  if(soverm <= model->convergence) {
+  if(soverm <= model->convergence and done == false) {
     model->lout << "* Convergence criteria reached. Exiting successfully." << endl;
     done = true;
     for(int i=0; i < ligands.size(); i++) ligands[i]->done = true;
@@ -88,15 +88,15 @@ double Session::checkConvergence() {
 
 
 
-//SessionRadial definition
-SessionRadial::SessionRadial(Model *m) : Session(m, CONFIGURATION_RADIAL) {
+//SessionNAM definition
+SessionNAM::SessionNAM(Model *m) : Session(m, CONFIGURATION_RADIAL) {
   b = 0.;
   q = 0.;
   q2 = 0.;
 }
 
 
-void SessionRadial::positionLigand(Body *bi) {
+void SessionNAM::positionLigand(Body *bi) {
    
   vertex Q = { random(-1., 1.), random(-1., 1.), random(-1., 1.) };
   double l = sqrt(Q.x*Q.x + Q.y*Q.y + Q.z*Q.z);
@@ -110,7 +110,7 @@ void SessionRadial::positionLigand(Body *bi) {
 
 }
 
-void SessionRadial::printRateConstant() {
+void SessionNAM::printRateConstant() {
   int Ndone = Nbind.get_value() + Nexit.get_value();
   double conv = checkConvergence();
 
@@ -136,6 +136,8 @@ void SessionRadial::printRateConstant() {
     model->lout << "Ndone=" << Ndone << " ";
     model->lout << "β=" << B << " ";
     model->lout << "conv=" << conv << " ";
+    if(done)
+      model->lout << "(convergence reached) ";
     model->lout << "kd(b)=" << kb * Na * 1e12 * 1e-27 << " ";
     model->lout << "b=" << b << " ";
     model->lout << "q=" << q << " ";
@@ -167,18 +169,15 @@ void SessionRadial::printRateConstant() {
 }
 
 
-void SessionRadial::checkLigand(Body *bi) {
+void SessionNAM::checkLigand(Body *bi) {
   double dr[3], l2;
   dr[0] = bi->R.x - model->center.x;
   dr[1] = bi->R.y - model->center.y;
   dr[2] = bi->R.z - model->center.z;
   l2 = (dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
   if(l2 >= q2) {
-    //*Nexit += 1;
-    // Record Beta value after exit event
-    //bi->session->recordBeta();
-    //bi->session->record_beta->set_value(true);
-    model->lout << "#" << id << "\t Escape event at t=" << bi->t << " ps  (t_dwell=" << bi->t_dwell << "ps, max=" << bi->t_dwell_max << "ps, total=" << bi->t_dwell_total << "ps)" << endl;
+    if(model->logExiters)
+      model->lout << "#" << id << "\t Escape event at t=" << bi->t << " ps  (t_dwell=" << bi->t_dwell << "ps, max=" << bi->t_dwell_max << "ps, total=" << bi->t_dwell_total << "ps)" << endl;
     bi->exited = true;
     bi->session->positionLigand(bi);
     bi->t = 0.;
@@ -192,93 +191,19 @@ void SessionRadial::checkLigand(Body *bi) {
 
 
 
-//SessionAbsolutePeriodic definition
-SessionAbsolutePeriodic::SessionAbsolutePeriodic(Model *m) : Session(m, CONFIGURATION_ABSOLUTE_PERIODIC) {
-  b = 0.;
-  t_max = 0.;
+//SessionDirect definition
+SessionDirect::SessionDirect(Model *m) : Session(m, CONFIGURATION_ABSOLUTE_RADIAL) {
   t_avgt.set_value(0.);
 }
 
 
-void SessionAbsolutePeriodic::positionLigand(Body *bi) {
-  bi->center();
-  bi->translate(start.x, start.y, start.z);
-}
-
-void SessionAbsolutePeriodic::printRateConstant() {
-  int Ndone = Nbind.get_value() + Ntlim.get_value();
-  if(Ndone == 0) return;
-
-  for(int bsi=0; bsi < bindingCriteria.size(); bsi++) {
-    double B = ((double)bindingCriteria[bsi]->Nbind.get_value()) / ((double)Ndone);
-    double V = bounds.x * bounds.y * bounds.z * LperA3;
-    double C = (1. / Na) / V;
-    double tavg = bindingCriteria[bsi]->t_avgt.get_value() / bindingCriteria[bsi]->Nbind.get_value();
-    double rate = B * C / (tavg * 1e-12);
-
-    //printf("   (session %d bs %d)   rate = %.5e Ms⁻¹ (Nbind=%d Ndone=%d β=%.4f C=%.1f k=%.5e s⁻¹ tavg=%.5e Davg=%.5e)", id, bsi, rate, bindingCriteria[bsi]->Nbind.get_value(), Ndone, B, C, B / (tavg * 1e-12), tavg, Davg);
-    model->lout << endl;
-  }
-
-  double B = ((double)Nbind.get_value()) / ((double)Ndone);
-  if(bindingCriteria.size() > 1) {
-    double V = bounds.x * bounds.y * bounds.z * LperA3;
-    double C = (1. / Na) / V;
-    double tavg = t_avgt.get_value() / Nbind.get_value();
-
-    double rate = B * C / (tavg * 1e-12);
-
-    //printf("   (session %d)   rate = %.5e Ms⁻¹ (Nbind=%d Ndone=%d β=%.4f C=%.1f k=%.5e s⁻¹ tavg=%.5e Davg=%.5e)", id, rate, Nbind.get_value(), Ndone, B, C, B / (tavg * 1e-12), tavg, Davg);
-    model->lout << endl;
-  }
-
-  if(model->max_simulations > 0 and Ndone >= model->max_simulations) {
-    model->lout << "> Maximum simulations reached. Exiting." << endl;
-    model->done = true;
-  }
-}
-
-
-void SessionAbsolutePeriodic::checkLigand(Body *bi) {
-  if(bi->R.x > 0.5*bounds.x)  { bi->translate(-bounds.x, 0., 0.); }
-  if(bi->R.y > 0.5*bounds.y)  { bi->translate(0., -bounds.y, 0.); }
-  if(bi->R.z > 0.5*bounds.z)  { bi->translate(0., 0., -bounds.z); }
-  if(bi->R.x < -0.5*bounds.x) { bi->translate(bounds.x, 0., 0.);  }
-  if(bi->R.y < -0.5*bounds.y) { bi->translate(0., bounds.y, 0.);  }
-  if(bi->R.z < -0.5*bounds.z) { bi->translate(0., 0., bounds.z);  }
-
-  if(bi->t >= t_max) {
-    //bi->done = true;
-    //*Ntlim += 1;
-    // Record Beta value after exit event
-    //bi->session->recordBeta();
-    // Reposition ligand
-    model->lout << "#" << id << "\t Time-out event  (t_dwell=" << bi->t_dwell << "ps, max=" << bi->t_dwell_max << "ps, total=" << bi->t_dwell_total << "ps)" << endl;
-    positionLigand(bi);
-    bi->timedout = true;
-    bi->t = 0.;
-    bi->t_dwell = 0.;
-    bi->t_dwell_max = 0.;
-    bi->t_dwell_total = 0.;
-  }
-}
-
-
-
-
-//SessionAbsoluteRadial definition
-SessionAbsoluteRadial::SessionAbsoluteRadial(Model *m) : Session(m, CONFIGURATION_ABSOLUTE_RADIAL) {
-  t_avgt.set_value(0.);
-}
-
-
-void SessionAbsoluteRadial::positionLigand(Body *bi) {
+void SessionDirect::positionLigand(Body *bi) {
   bi->center();
   bi->translate(start.x, start.y, start.z);
 }
 
 
-void SessionAbsoluteRadial::printRateConstant() {
+void SessionDirect::printRateConstant() {
   int Ndone = Nbind.get_value() + Nexit.get_value();
   if(Ndone == 0) return;
   double conv = checkConvergence();
@@ -294,7 +219,10 @@ void SessionAbsoluteRadial::printRateConstant() {
     model->lout << "Ndone=" << Ndone << " ";
     model->lout << "t_avg=" << tavg << " ";
     model->lout << "β=" << B << " ";
-    model->lout << "q=" << q << " ";
+    model->lout << "conv=" << conv << " ";
+    if(done)
+      model->lout << "(convergence reached) ";
+    model->lout << "b=" << q << " ";
     model->lout << "Davg=" << Davg << " ";
     model->lout << endl;
   }
@@ -323,7 +251,7 @@ void SessionAbsoluteRadial::printRateConstant() {
 }
 
 
-void SessionAbsoluteRadial::checkLigand(Body *bi) {
+void SessionDirect::checkLigand(Body *bi) {
   double dr[3], l2;
   dr[0] = bi->R.x - model->center.x;
   dr[1] = bi->R.y - model->center.y;
@@ -338,7 +266,8 @@ void SessionAbsoluteRadial::checkLigand(Body *bi) {
     // Reposition ligand
     bi->session->positionLigand(bi);
     bi->exited = true;
-    model->lout << "#" << id << "\t Escape event at t=" << bi->t << " ps  l=" << sqrt(l2) << " (t_dwell=" << bi->t_dwell << "ps, max=" << bi->t_dwell_max << "ps, total=" << bi->t_dwell_total << "ps)" << endl;
+    if(model->logExiters)
+      model->lout << "#" << id << "\t Escape event at t=" << bi->t << " ps  l=" << sqrt(l2) << " (t_dwell=" << bi->t_dwell << "ps, max=" << bi->t_dwell_max << "ps, total=" << bi->t_dwell_total << "ps)" << endl;
     bi->t = 0.;
     bi->t_dwell = 0.;
     bi->t_dwell_max = 0.;

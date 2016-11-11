@@ -41,6 +41,27 @@ class Timer {
       }
       *stream << seconds << " seconds elapsed." << endl;
     }
+
+    void log_current(ostream *stream) {
+      stop(); //doesn't actually stop anything, just grab current time
+
+      double seconds = duration;
+
+      // calculate human time
+      int minutes = seconds / 60;
+      seconds -= (minutes * 60.);
+      int hours = minutes / 60;
+      minutes -= (hours * 60);
+
+      // output timing information
+      if(hours > 0.) {
+        *stream << hours << ":";
+      }
+      if(minutes > 0.) {
+        *stream << minutes << ":";
+      }
+      *stream << seconds;
+    }
 };
 
 #endif

@@ -45,6 +45,8 @@ class Model {
     string bfn;   //bound pqr filename
 
     // log output
+    bool logBinders;
+    bool logExiters;
     string lfn;   //log filename
     fstream lout; //log file stream for writing
     void printRateConstant();
@@ -67,7 +69,6 @@ class Model {
     double convergence;       //terminate run once a beta/k value has converged by a certain order of magnitude (default = 1e-4)
     int convergence_window;   //number of recorded beta values required to check for convergence (default = 100)
     int max_simulations;      //terminate run after a certain number of total simulations have been completed (default = none)
-    void checkConvergence();
 
   public:
     vector< Session* > sessions;    //BD sessions
