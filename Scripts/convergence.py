@@ -67,7 +67,7 @@ def running_stdev(x, y, w):
   return X, Y, M
 
 
-for window in [100]:
+for window in [1000]:
   if b_stotal:
     for ci in range(len(r_stotal) - 1):
       newy = []
