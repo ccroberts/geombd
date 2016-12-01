@@ -28,6 +28,11 @@ class Grid {
 
       ifstream fd(bpm_filename.c_str(), ios::in | ios::binary);
 
+      if(!fd.is_open()) {
+        cout << "! Failed to load grid file. File not found." << endl;
+        exit(-1);
+      }
+
       fd.read((char*)&origin, sizeof(double) * 3);
       fd.read((char*)&N, sizeof(int) * 3);
       fd.read((char*)&delta, sizeof(double));

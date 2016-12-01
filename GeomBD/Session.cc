@@ -76,7 +76,7 @@ double Session::checkConvergence() {
   }
   s = sqrt(s / beta_history.size());
   double soverm = s / m;
-  if(soverm <= model->convergence and done == false) {
+  if(soverm <= model->convergence and soverm != 0. and done == false) {
     model->lout << "* Convergence criteria reached. Exiting successfully." << endl;
     done = true;
     for(int i=0; i < ligands.size(); i++) ligands[i]->done = true;

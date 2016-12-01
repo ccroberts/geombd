@@ -41,7 +41,7 @@ void Model::parseInputFile() {
                 lout.flush();
                 Timer *t = new Timer();
                 t->start();
-                exmaps.push_back(new Grid_EX(token, "x"));
+                exmaps.push_back(new Grid_EX(token));
                 t->stop();
                 lout << " done. ";
                 t->print(&lout);
@@ -71,7 +71,7 @@ void Model::parseInputFile() {
       if(token == "debug") {
         parseNextValue(&line, &token);
         lout << "* Loading debug map \"" << token << "\"" << endl;
-        debug_map = new Grid_EX(token, "x");
+        debug_map = new Grid_EX(token);
       }
       if(token == "convergence") {
         parseNextValue(&line, &token);
@@ -109,10 +109,10 @@ void Model::parseInputFile() {
       if(token == "logexiters") {
         logExiters = true;
       }
-      if(token == "betacalc") {
+      if(token == "betacalc" or token == "writelog") {
         parseNextValue(&line, &token);
         rate_beta = stringToInt(token);
-        lout << "* Calculating Beta value, and writing association rate information to logfile, every " << rate_beta << " steps." << endl;
+        lout << "* Writing association rate information to logfile, every " << rate_beta << " steps." << endl;
       }
       if(token == "timestep") {
         parseNextValue(&line, &token);
