@@ -43,10 +43,17 @@ class BindingCriteria {
 
     bool checkBindingAND(Body *ligand) {
       for(int i=0; i < pairs.size(); i++) {
-        Bead *lb = ligand->beads[pairs[i].laid];
-        vertex dr = { lb->R.x - pairs[i].target.x,
-                      lb->R.y - pairs[i].target.y,
-                      lb->R.z - pairs[i].target.z };
+        vertex dr;
+        if(pairs[i].laid < 0) {
+          dr.x = ligand->R.x - pairs[i].target.x;
+          dr.y = ligand->R.y - pairs[i].target.y;
+          dr.z = ligand->R.z - pairs[i].target.z;
+        } else {
+          Bead *lb = ligand->beads[pairs[i].laid];
+          dr.x = lb->R.x - pairs[i].target.x;
+          dr.y = lb->R.y - pairs[i].target.y;
+          dr.z = lb->R.z - pairs[i].target.z;
+        }
         double l2 = dr.x*dr.x + dr.y*dr.y + dr.z*dr.z;
         if(l2 > pairs[i].r2) return false;
       }
@@ -55,10 +62,17 @@ class BindingCriteria {
 
     bool checkBindingOR(Body *ligand) {
       for(int i=0; i < pairs.size(); i++) {
-        Bead *lb = ligand->beads[pairs[i].laid];
-        vertex dr = { lb->R.x - pairs[i].target.x,
-                      lb->R.y - pairs[i].target.y,
-                      lb->R.z - pairs[i].target.z };
+        vertex dr;
+        if(pairs[i].laid < 0) {
+          dr.x = ligand->R.x - pairs[i].target.x;
+          dr.y = ligand->R.y - pairs[i].target.y;
+          dr.z = ligand->R.z - pairs[i].target.z;
+        } else {
+          Bead *lb = ligand->beads[pairs[i].laid];
+          dr.x = lb->R.x - pairs[i].target.x;
+          dr.y = lb->R.y - pairs[i].target.y;
+          dr.z = lb->R.z - pairs[i].target.z;
+        }
         double l2 = dr.x*dr.x + dr.y*dr.y + dr.z*dr.z;
         if(l2 <= pairs[i].r2) return true;
       }

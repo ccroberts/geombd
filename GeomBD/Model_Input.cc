@@ -212,7 +212,7 @@ void Model::parseInputFile() {
       }
       if(token == "bind") {
         BindingCriteria *bc = new BindingCriteria();
-        lout << "  + Binding criteria (Single Ligand Atom): " << endl;
+        lout << "  + Binding criteria: " << endl;
         parseNextValue(&line, &token);
         double bx = stringToDouble(token);
         parseNextValue(&line, &token);
@@ -220,11 +220,23 @@ void Model::parseInputFile() {
         parseNextValue(&line, &token);
         double bz = stringToDouble(token);
         parseNextValue(&line, &token);
-        int laid = stringToInt(token);
-        parseNextValue(&line, &token);
-        double r = stringToDouble(token);
+        double laid = stringToDouble(token);
+        if(laid <= 0) {
+          lout << " ! Warning: Binding criteria atom ID is <= 0. Binding criteria should be specified according to PDB-style atom numbering starting at a value of 1." << endl;
+        }
+        double r;
+        if(parseNextValue(&line, &token)) {
+          r = stringToDouble(token);
+        } else {
+          r = laid;
+          laid = 0;
+        }
         bc->addPair(bx, by, bz, laid-1, r);
-        lout << "    - LAID: " << laid << " within " << r << "A of (" << bx << " " << by << " " << bz << ")" << endl;
+        if(laid <= 0) {
+          lout << "    - Ligand center within " << r << "A of (" << bx << " " << by << " " << bz << ")" << endl;
+        } else {
+          lout << "    - Atom #" << laid << " within " << r << "A of (" << bx << " " << by << " " << bz << ")" << endl;
+        }
         sessions[sessions.size()-1]->bindingCriteria.push_back(bc);
       }
       if(token == "bindand") {

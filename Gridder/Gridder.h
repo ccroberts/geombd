@@ -34,6 +34,14 @@ inline bool coordinateToGrid(double x, double y, double z, int *Gx, int *Gy, int
 }
 
 
+inline bool gridToCoordinate(int Gx, int Gy, int Gz, double *x, double *y, double *z, vertex *origin, double delta) {
+  *x = (((double)Gx) * delta) + origin->x;
+  *y = (((double)Gy) * delta) + origin->y;
+  *z = (((double)Gz) * delta) + origin->z;
+  return true;
+}
+
+
 struct LJ_Pair_Parameter {
   double A;
   double B;
@@ -262,7 +270,7 @@ class Map_Potential {
 
 class Map_Exclusion {
   public:
-    bool ***ex;
+    bool ***data;
     vertex origin;
     vertex dimensions;
     int Npoints[3];
@@ -289,11 +297,11 @@ class Map_Exclusion {
       include_padding = Use_Padding;
 
       // allocate
-      ex = (bool***)calloc(Npoints[0], sizeof(bool**));
+      data = (bool***)calloc(Npoints[0], sizeof(bool**));
       for(int i=0; i < Npoints[0]; i++) {
-        ex[i] = (bool**)calloc(Npoints[1], sizeof(bool*));
+        data[i] = (bool**)calloc(Npoints[1], sizeof(bool*));
         for(int j=0; j < Npoints[1]; j++) {
-          ex[i][j] = (bool*)calloc(Npoints[2], sizeof(bool));
+          data[i][j] = (bool*)calloc(Npoints[2], sizeof(bool));
         }
       }
     }
@@ -312,11 +320,11 @@ class Map_Exclusion {
       padding = 0.;
 
       // allocate
-      ex = (bool***)calloc(Npoints[0], sizeof(bool**));
+      data = (bool***)calloc(Npoints[0], sizeof(bool**));
       for(int i=0; i < Npoints[0]; i++) {
-        ex[i] = (bool**)calloc(Npoints[1], sizeof(bool*));
+        data[i] = (bool**)calloc(Npoints[1], sizeof(bool*));
         for(int j=0; j < Npoints[1]; j++) {
-          ex[i][j] = (bool*)calloc(Npoints[2], sizeof(bool));
+          data[i][j] = (bool*)calloc(Npoints[2], sizeof(bool));
         }
       }
 
@@ -324,7 +332,7 @@ class Map_Exclusion {
       for(int nx=0; nx < Npoints[0]; nx++) {
         for(int ny=0; ny < Npoints[1]; ny++) {
           for(int nz=0; nz < Npoints[2]; nz++) {
-            fd.read((char*)&ex[nx][ny][nz], sizeof(bool));
+            fd.read((char*)&data[nx][ny][nz], sizeof(bool));
           }
         }
       }
@@ -363,7 +371,7 @@ class Map_Exclusion {
                 double dy = (origin.y + (gy * spacing)) - Rrec.y;
                 double dz = (origin.z + (gz * spacing)) - Rrec.z;
                 if(sqrt(dx*dx + dy*dy + dz*dz) <= searchrd) {
-                  ex[gx][gy][gz] = true;
+                  data[gx][gy][gz] = true;
                 }
               }
             }
@@ -378,11 +386,11 @@ class Map_Exclusion {
       // deallocate
       for(int i=0; i < Npoints[0]; i++) {
         for(int j=0; j < Npoints[1]; j++) {
-          free(ex[i][j]);
+          free(data[i][j]);
         }
-        free(ex[i]);
+        free(data[i]);
       }
-      free(ex);
+      free(data);
     }
 
     void write(string filename) {
@@ -394,7 +402,7 @@ class Map_Exclusion {
 
       for(int i=0; i < Npoints[0]; i++) {
         for(int j=0; j < Npoints[1]; j++) {
-          fo.write((char*)ex[i][j], sizeof(bool) * Npoints[2]);
+          fo.write((char*)data[i][j], sizeof(bool) * Npoints[2]);
         }
       }
     }
@@ -414,7 +422,7 @@ class Map_Exclusion {
       fprintf(fdo, "object 3 class array type double rank 0 items %d data follows\n", Ntotal);
       int i[3] = { 0, 0, 0 };
       for(int it=0; it < Ntotal; it++) {
-        fprintf(fdo, "%12.6e ", (double)ex[i[0]][i[1]][i[2]]);
+        fprintf(fdo, "%12.6e ", (double)data[i[0]][i[1]][i[2]]);
         if((it+1) % 3 == 0) fprintf(fdo, "\n");
         i[2]++;
         if(i[2] >= Npoints[2]) { i[2] = 0; i[1]++; }
@@ -427,6 +435,29 @@ class Map_Exclusion {
       fprintf(fdo, "component \"connections\" value 2\n");
       fprintf(fdo, "component \"data\" value 3\n");
       fclose(fdo);
+    }
+
+
+    bool coordToGrid(double x, double y, double z, int *gx, int *gy, int *gz) {
+      coordinateToGrid(x, y, z, gx, gy, gz, &origin, spacing);
+      if(*gx < 0 or *gx > Npoints[0] or *gy < 0 or *gy > Npoints[1] or *gz < 0 or *gz > Npoints[2]) {
+        return false;
+      }
+      return true;
+    }
+
+
+    bool gridToCoord(int gx, int gy, int gz, double *x, double *y, double *z) {
+      if(gx < 0 or gx > Npoints[0] or gy < 0 or gy > Npoints[1] or gz < 0 or gz > Npoints[2]) {
+        return false;
+      }
+      gridToCoordinate(gx, gy, gz, x, y, z, &origin, spacing);
+      return true;
+    }
+
+    bool get_value(int gx, int gy, int gz) {
+      if(gx < 0 or gy < 0 or gz < 0 or gx >= Npoints[0] or gy >= Npoints[1] or gz >= Npoints[2]) return false;
+      return data[gx][gy][gz];
     }
 
 };

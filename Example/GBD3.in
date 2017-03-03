@@ -9,7 +9,7 @@ grid C HRP_TMB-C.bpm
 grid N HRP_TMB-N.bpm
 grid H HRP_TMB-H.bpm
 
-associate
+session nam
   ligand TMB.pqr 5000
   b 100
   q 500
