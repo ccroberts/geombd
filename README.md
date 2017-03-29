@@ -47,32 +47,28 @@ The following features are included in GeomBD2:
     * __bind__ [X] [Y] [Z] [Radius]:<br> Specifies the binding site cartesian coordinate and binding site radius, in Angstroms.<br><br>
 
 Example intermediate transfer input file:
-<div style="border: 1px solid #777; background-color: #f0f0f0; padding: 10px;">
-  <code>
-  temperature 298.15<br>
-  timestep 0.050 0.500 75 300<br>
-  threads 20<br>
-  writetraj 10000<br>
-  writelog 10000<br>
-  convergence 0.0001<br>
-  convwindow 1000<br>
-  <br>
-  receptor H95.pqr<br>
-  grid ex H95-ex.bxm<br>
-  <br>
-  session direct<br>
-  &nbsp;&nbsp;ligand Intermediate.pqr 1600<br>
-  &nbsp;&nbsp;b 150<br>
-  &nbsp;&nbsp;from 57.092442 31.592548 65.040970<br>
-  &nbsp;&nbsp;bind 39.2522 43.8311 43.4662 7 5.0<br>
-  <br>
-  session indirect<br>
-  &nbsp;&nbsp;ligand Intermediate.pqr 1600<br>
-  &nbsp;&nbsp;b 150<br>
-  &nbsp;&nbsp;q 700<br>
-  &nbsp;&nbsp;bind 39.2522 43.8311 43.4662 7 5.0<br>
-  </code>
-</div>
+>  temperature 298.15<br>
+>  timestep 0.050 0.500 75 300<br>
+>  threads 20<br>
+>  writetraj 10000<br>
+>  writelog 10000<br>
+>  convergence 0.0001<br>
+>  convwindow 1000<br>
+>  <br>
+>  receptor H95.pqr<br>
+>  grid ex H95-ex.bxm<br>
+>  <br>
+>  session direct<br>
+>  &nbsp;&nbsp;ligand Intermediate.pqr 1600<br>
+>  &nbsp;&nbsp;b 150<br>
+>  &nbsp;&nbsp;from 57.092442 31.592548 65.040970<br>
+>  &nbsp;&nbsp;bind 39.2522 43.8311 43.4662 7 5.0<br>
+>  <br>
+>  session indirect<br>
+>  &nbsp;&nbsp;ligand Intermediate.pqr 1600<br>
+>  &nbsp;&nbsp;b 150<br>
+>  &nbsp;&nbsp;q 700<br>
+>  &nbsp;&nbsp;bind 39.2522 43.8311 43.4662 7 5.0<br>
 
 
 
@@ -83,5 +79,3 @@ GeomBD can be run using the following example command:
   </code>
 </div>
 
-
-<a href="https://www.lucidchart.com/invitations/accept/994b3d12-de47-4c70-a02c-8b096711f0e7">Basic source code diagram</a>
