@@ -451,10 +451,10 @@ void Model::parseLigandPQR(string lfn) {
       double x = stringToDouble(line.substr(30, 10));
       double y = stringToDouble(line.substr(40, 10));
       double z = stringToDouble(line.substr(50, 10));
-      double q = stringToDouble(line.substr(70, 7));
+      double q = stringToDouble(line.substr(61, 7));
       string at_raw = line.substr(12, 4);
       string at = trim(at_raw);
-      bj->r = stringToDouble(line.substr(69, 6));
+      bj->r = stringToDouble(line.substr(69, 7));
 
       //TODO: Complete table
       /*
