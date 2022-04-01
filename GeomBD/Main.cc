@@ -25,7 +25,7 @@ bool getInputWithFlag(int argc, char **argv, char flag, string *value) {
 
 
 void usage() {
-  printf("Usage: GeomBD2 -i INPUTFILE -o TRAJECTORY.pqr -l LOGFILE.log\n");
+  printf("Usage: GeomBD2 -i INPUTFILE -o TRAJECTORY.dcd -l LOGFILE.log\n");
 }
 
 

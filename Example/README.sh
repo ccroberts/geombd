@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export GBD3=/home/ccr/Source/github/geombd/
+export GBD3=~/Source/github-ccroberts/geombd
 
 $GBD3/bin/Parameterize.py -d $GBD3/Parameters/AA.gdbp -i TMB.pdb -o TMB.pqr
 $GBD3/bin/Parameterize.py -d $GBD3/Parameters/AA.gdbp -i HRP.pdb -o HRP.pqr
