@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
       cilk_for(int nz=0; nz < map_ex->Npoints[2]; nz++) {
         double Z = (nz * Arg_GridSpacing) + map_ex->origin.z;
 
-        if(map_ex->ex[nx][ny][nz] == false) continue;
+        if(map_ex->data[nx][ny][nz] == false) continue;
 
 /* POTENTIAL-SPECIFIC */
         map_d->data_t[nz] = 0;

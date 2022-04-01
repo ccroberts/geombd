@@ -35,7 +35,7 @@ def process_receptor(outf, af, ff, resname, resid, resdata):
         pref = '%s%s%s' % (line[:12], str(' %s' % param[1].ljust(3, ' ')), line[16:30])
         outf.write('%s%10.4f%10.4f%10.4f %7.4f %6.4f\n' % (pref, x, y, z, param[0], af[param[1]]['r'])) #PQR
       except KeyError:
-        print 'REMARK No charge assign for atom type', at
+        print('REMARK No charge assign for atom type', at)
         pref = '%s%s%s' % (line[:12], str(' %s' % el.ljust(3, ' ')), line[16:30])
         #print '%s  1.00  0.00   %8.4f %s' % (line[:54], 0, at[0])
         outf.write('%s%10.4f%10.4f%10.4f %7.4f %6.4f\n' % (pref, x, y, z, 0, af[at[0]]['r'])) #PQR
@@ -45,8 +45,8 @@ def process_receptor(outf, af, ff, resname, resid, resdata):
     for line in resdata:
       tmpfd.write(line)
     tmpfd.close()
-    subprocess.call(["babel", "-ipdb", "/tmp/het.pdb", "-opdb", "/tmp/heth.pdb"])
-    subprocess.call(["babel", "-ipdb", "/tmp/heth.pdb", "-omol2", "/tmp/het.mol2"])
+    subprocess.call(["obabel", "-ipdb", "/tmp/het.pdb", "-opdb", "-O/tmp/heth.pdb"])
+    subprocess.call(["obabel", "-ipdb", "/tmp/heth.pdb", "-omol2", "-O/tmp/het.mol2"])
     Q = []
     tmpfd = open('/tmp/het.mol2', 'r')
     tmpfd.readline()
@@ -131,7 +131,7 @@ def run(paramfn, pdbfn, outfn):
 
 if __name__ == '__main__':
   if len(sys.argv) < 7:
-    print 'Usage:', sys.argv[0], '-d [Parm.gbdp]', '-i [Molecule.PDB]', '-o [Molecule.PQR]'
+    print('Usage:', sys.argv[0], '-d [Parm.gbdp]', '-i [Molecule.PDB]', '-o [Molecule.PQR]')
   if len(sys.argv) == 7:
     argd = { sys.argv[1]: sys.argv[2], sys.argv[3]: sys.argv[4], sys.argv[5]: sys.argv[6] }
     run(argd['-d'], argd['-i'], argd['-o'])

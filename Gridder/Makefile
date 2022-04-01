@@ -1,8 +1,8 @@
 CC = icpc
-CFLAGS = -O3 -std=c++0x -I/usr/include/x86_64-linux-gnu/c++/4.8/ -openmp -I../GeomBD
+CFLAGS = -O3 -std=c++0x -I/usr/include/x86_64-linux-gnu/c++/4.8/ -qopenmp -I../GeomBD
 #CFLAGS += -DDEBUG
 #CFLAGS += -DTOUCHING
-LDFLAGS = -lcilkrts -openmp
+LDFLAGS = -lcilkrts -qopenmp
 		
 O_gLJ = Gridder-LJ.o 
 X_gLJ = ../bin/Gridder-LJ
