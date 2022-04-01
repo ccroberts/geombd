@@ -1,11 +1,9 @@
-# geombd 3.0beta
-
-test
+# geombd 3.1beta
 
 GeomBD is a rigid body Brownian dynamics software for determining interenzyme intermediate transfer rates and substrate association rates in biomolecular complexes. GeomBD2 supports the <a href="http://dx.doi.org/10.1063/1.446900">NAM method</a> for determining second-order association rate constants. In addition, GeomBD2 extends this scheme to quantify intermediate substrate transfer rates in multi-enzyme complexes. Thus, simulations in GeomBD2 can proceed through two different configurations: ligand-receptor association, and substrate transfer. For both types of simulations, many substrate replicates diffuse in parallel among the spatially fixed, static descriptions of the receptor system. 
 <br>
 
-The following features are included in GeomBD2:
+The following features are included in GeomBD3:
 
 * Simple rigid body ligand PQR-formatted definitions composed of charged spherical particles.
 * Volume exclusion grids for receptor representation.
@@ -76,7 +74,7 @@ Example intermediate transfer input file:
 GeomBD can be run using the following example command:
 <div style="border: 1px solid #777; background-color: #f0f0f0; padding: 10px;">
   <code>
-    GBD -i INPUT_FILE -l LOG_FILE -o TRAJ_FILE.pqr
+    GBD -i INPUT_FILE -l LOG_FILE -o TRAJ_FILE.dcd
   </code>
 </div>
 
