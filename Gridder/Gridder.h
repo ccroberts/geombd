@@ -175,10 +175,10 @@ class Molecule_PQRE {
             types.push_back(params->index_for_type(tt));
           types_set.insert(tt);
           // charge
-          double q = stringToDouble(line.substr(60, 8));
+          double q = stringToDouble(line.substr(61, 7));
           charges.push_back(q);
           // radius
-          double r = stringToDouble(line.substr(68, 8));
+          double r = stringToDouble(line.substr(69, 7));
           radii.push_back(r);
         }
       }
